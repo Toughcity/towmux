@@ -1,0 +1,18 @@
+# Prompt
+romkatv/powerlevel10k
+
+# OMZ plugins (loaded individually via path:)
+ohmyzsh/ohmyzsh path:plugins/git
+ohmyzsh/ohmyzsh path:plugins/macos
+ohmyzsh/ohmyzsh path:plugins/brew
+ohmyzsh/ohmyzsh path:plugins/colored-man-pages
+ohmyzsh/ohmyzsh path:plugins/command-not-found
+
+# Completions / UX
+zsh-users/zsh-completions
+Aloxaf/fzf-tab
+zsh-users/zsh-history-substring-search
+zsh-users/zsh-autosuggestions
+
+# MUST be last
+zsh-users/zsh-syntax-highlighting

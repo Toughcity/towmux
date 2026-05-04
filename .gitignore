@@ -1,0 +1,5 @@
+.DS_Store
+*.swp
+
+# Local-only Claude Code settings
+.claude/settings.local.json
