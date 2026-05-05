@@ -7,6 +7,7 @@ fi
 export EDITOR=nvim
 export VISUAL=nvim
 export PATH="$HOME/.local/bin:$PATH"
+[[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
 
 # ── 3. history ───────────────────────────────────────────────────────
 HISTFILE=~/.zsh_history
@@ -27,19 +28,6 @@ eval "$(zoxide init zsh)"           # adds `z` and `zi`
 eval "$(atuin init zsh)"            # ctrl-r history search
 [[ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ]] && source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
 [[ -f /opt/homebrew/opt/fzf/shell/completion.zsh ]]   && source /opt/homebrew/opt/fzf/shell/completion.zsh
-
-_pick_start_dir() {
-  [[ -o interactive ]] || return
-  command -v fzf >/dev/null 2>&1 || return
-
-  local choice
-  choice=$(print -rl -- "$HOME	~" "$HOME/Code	Code" "$HOME/Safad-Code	Safad-Code" \
-    | fzf --delimiter=$'\t' --with-nth=2 --prompt='Open terminal in > ' --height=40% --border) || return
-
-  cd "${choice%%$'\t'*}" || return
-}
-
-_pick_start_dir
 
 # ── 6. lazy NVM (don't pay the load cost on every shell) ─────────────
 export NVM_DIR="$HOME/.nvm"

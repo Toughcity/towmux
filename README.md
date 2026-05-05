@@ -32,26 +32,23 @@ and stows the dotfiles. Re-run it anytime — it's idempotent.
 After install: open a new terminal, then run `nvim` once to let LazyVim
 bootstrap its plugins.
 
-## Day-to-day: cfgsync
+## Local overrides
 
-`cfgsync` (defined in `.zshrc`) is the one command for keeping the repo in
-sync with edits you make to your dotfiles:
+Put machine-specific env vars in `~/.zshrc.local`.
 
 ```sh
-cfgsync                      # auto-message: "sync: YYYY-MM-DD HH:MM"
-cfgsync "feat: add overseer" # custom commit message
+echo 'export MY_VAR=value' >> ~/.zshrc.local
 ```
 
-It runs `stow --restow` before committing, so **any new file you drop into
-`zsh/` or `nvim/.config/nvim/` is automatically linked into `$HOME`** — you
-never need to run stow manually.
+`~/.zshrc` sources that file if it exists, so the settings stay local and out
+of the repo.
 
 ## Refreshing
 
 ```sh
 brew upgrade                 # latest CLI tools
-nvim +':Lazy sync' +qa       # latest nvim plugins (rewrites lazy-lock.json)
-cfgsync "chore: refresh nvim plugins"
+nvim +':Lazy sync' +qa       # latest nvim plugins (commits the lock refresh)
+git add nvim/.config/nvim/lazy-lock.json && git commit -m "chore: refresh nvim plugins"
 ```
 
 `lazy-lock.json` is committed so a fresh laptop reproduces *exactly* what
