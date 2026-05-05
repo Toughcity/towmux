@@ -32,12 +32,26 @@ and stows the dotfiles. Re-run it anytime — it's idempotent.
 After install: open a new terminal, then run `nvim` once to let LazyVim
 bootstrap its plugins.
 
+## Day-to-day: cfgsync
+
+`cfgsync` (defined in `.zshrc`) is the one command for keeping the repo in
+sync with edits you make to your dotfiles:
+
+```sh
+cfgsync                      # auto-message: "sync: YYYY-MM-DD HH:MM"
+cfgsync "feat: add overseer" # custom commit message
+```
+
+It runs `stow --restow` before committing, so **any new file you drop into
+`zsh/` or `nvim/.config/nvim/` is automatically linked into `$HOME`** — you
+never need to run stow manually.
+
 ## Refreshing
 
 ```sh
 brew upgrade                 # latest CLI tools
-nvim +':Lazy sync' +qa       # latest nvim plugins (commits the lock refresh)
-git add nvim/.config/nvim/lazy-lock.json && git commit -m "chore: refresh nvim plugins"
+nvim +':Lazy sync' +qa       # latest nvim plugins (rewrites lazy-lock.json)
+cfgsync "chore: refresh nvim plugins"
 ```
 
 `lazy-lock.json` is committed so a fresh laptop reproduces *exactly* what
@@ -45,6 +59,6 @@ works today. `:Lazy sync` is how you pull upstream drift on your schedule.
 
 ## Adding a tool
 
-If a CLI you actually use in the terminal or nvim is missing, add a line to
-`Brewfile` and re-run `./install.sh`. Keep project-specific tooling
-(databases, cloud SDKs, language SDKs) out of here — install those per project.
+Add a line to `Brewfile` and re-run `./install.sh`. Keep project-specific
+tooling (databases, cloud SDKs, language SDKs) out of here — install those
+per project.
