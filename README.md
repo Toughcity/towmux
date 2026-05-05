@@ -32,6 +32,17 @@ and stows the dotfiles. Re-run it anytime — it's idempotent.
 After install: open a new terminal, then run `nvim` once to let LazyVim
 bootstrap its plugins.
 
+## Local overrides
+
+Put machine-specific env vars in `~/.zshrc.local`.
+
+```sh
+echo 'export MY_VAR=value' >> ~/.zshrc.local
+```
+
+`~/.zshrc` sources that file if it exists, so the settings stay local and out
+of the repo.
+
 ## Refreshing
 
 ```sh
@@ -45,6 +56,6 @@ works today. `:Lazy sync` is how you pull upstream drift on your schedule.
 
 ## Adding a tool
 
-If a CLI you actually use in the terminal or nvim is missing, add a line to
-`Brewfile` and re-run `./install.sh`. Keep project-specific tooling
-(databases, cloud SDKs, language SDKs) out of here — install those per project.
+Add a line to `Brewfile` and re-run `./install.sh`. Keep project-specific
+tooling (databases, cloud SDKs, language SDKs) out of here — install those
+per project.

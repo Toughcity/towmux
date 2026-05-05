@@ -7,6 +7,7 @@ fi
 export EDITOR=nvim
 export VISUAL=nvim
 export PATH="$HOME/.local/bin:$PATH"
+[[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
 
 # ── 3. history ───────────────────────────────────────────────────────
 HISTFILE=~/.zsh_history
@@ -53,12 +54,18 @@ alias cfgsync='_cfgsync'
 _cfgsync() {
   local repo="$HOME/Code/term-config"
   local msg="${1:-"sync: $(date '+%Y-%m-%d %H:%M')"}"
+  stow --target="$HOME" --dir="$repo" --restow zsh nvim
   git -C "$repo" add -A
   if git -C "$repo" diff --cached --quiet; then
     echo "cfgsync: nothing to commit"
     return 0
   fi
-  git -C "$repo" commit -m "$msg" && git -C "$repo" push
+  git -C "$repo" commit -m "$msg" || return 1
+  if git -C "$repo" remote | grep -q .; then
+    git -C "$repo" push
+  else
+    echo "cfgsync: committed locally (no remote configured — add one with: git remote add origin <url>)"
+  fi
 }
 
 # ── 9. p10k prompt ───────────────────────────────────────────────────
