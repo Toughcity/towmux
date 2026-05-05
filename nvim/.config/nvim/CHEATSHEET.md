@@ -60,9 +60,14 @@
 - `<Space>rt` — toggle task output panel
 - `<Space>rl` — re-run the last task
 
-## Codex / AI
-- `<Space>ai` — open Codex in a right-side terminal split
-- From the Codex terminal: `Ctrl+w` → `H/J/K/L` — move Codex to the left/bottom/top/right edge
+## OpenCode (AI)
+- `<Space>oo` — toggle OpenCode panel (also works in terminal mode)
+- `<Space>oa` — ask OpenCode about selection or cursor position
+- `<Space>os` — select a built-in prompt or command (explain, fix, review, test…)
+- `<Space>on` — start a new session
+- `<Space>ol` — list and switch sessions
+- `go` / `goo` — operator: add visual range / current line to OpenCode prompt
+- In the diff view: `da` accept edit, `dr` reject, `]c`/`[c` next/prev change
 
 ## Understanding Shortcuts
 - `<leader>` = `Space`
