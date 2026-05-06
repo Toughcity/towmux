@@ -7,6 +7,7 @@ fi
 export EDITOR=nvim
 export VISUAL=nvim
 export PATH="$HOME/.local/bin:$PATH"
+stty -ixon 2>/dev/null || true   # free Ctrl+S for tmux prefix (disables XOFF flow control)
 [[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
 
 # ── 3. history ───────────────────────────────────────────────────────
@@ -56,7 +57,7 @@ alias tls='tmux ls 2>/dev/null || echo "no tmux sessions"'
 _cfgsync() {
   local repo="$HOME/Code/term-config"
   local msg="${1:-"sync: $(date '+%Y-%m-%d %H:%M')"}"
-  stow --target="$HOME" --dir="$repo" --restow zsh nvim
+  stow --target="$HOME" --dir="$repo" --restow zsh nvim tmux
   git -C "$repo" add -A
   if git -C "$repo" diff --cached --quiet; then
     echo "cfgsync: nothing to commit"
@@ -144,11 +145,20 @@ fi
 # ── tmux projects ────────────────────────────────────────────────────
 #   t / tp               fzf-pick and open a project (creates session if new)
 #   tp .                 use current directory as project
-#   trun <cmd>           run command in stable 'run' window (JetBrains-style)
-#   tterm                add a new terminal window to current project
 #   tls                  list all active tmux sessions
+#   tterm                add a term-N window to current project
 #
-# ── tmux keys (prefix = Ctrl+Space) ─────────────────────────────────
+# ── trun — named run configurations (.trun file in project root) ─────
+#   trun                 fzf-pick a config and run it
+#   trun <name>          run named config  (e.g. trun frontend)
+#   trun <name> -- cmd   run explicit cmd in run-<name> window
+#   trun -- cmd          run explicit cmd in default 'run' window
+#
+#   .trun format:        frontend: npm run dev
+#                        backend:  go run ./cmd/server
+#                        debug:    node --inspect src/index.js
+#
+# ── tmux keys (prefix = Ctrl+S) ──────────────────────────────────────
 #   prefix d             detach (session stays alive)
 #   prefix s             session + window tree picker
 #   prefix ( / )         previous / next session
@@ -159,7 +169,6 @@ fi
 #   prefix h/j/k/l       move between panes (vim-style)
 #   prefix H/J/K/L       resize pane
 #   prefix T             add term-N window to current project
-#   prefix R             prompt: run command in stable run pane
 #   prefix Enter         enter copy mode   y=copy  v=select  Esc=exit
 #   prefix r             reload tmux config
 #
