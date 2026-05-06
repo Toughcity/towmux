@@ -174,6 +174,8 @@ fi
 #   prefix + |               split window vertically   (creates a pane)
 #   prefix + -               split window horizontally (creates a pane)
 #   prefix + =               cycle pane layout (even / main-vertical / tiled / ...)
+#   prefix + J               join another window into current as a pane (prompts for name)
+#   prefix + B               break current pane out into its own window  (prompts for name)
 #   prefix + h/j/k/l         move between panes  (only if window is split)
 #   prefix + H/J/K/L         resize pane
 #   prefix + T               add a new term-N window
