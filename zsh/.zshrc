@@ -141,39 +141,54 @@ fi
 #   cheat                print this cheatsheet
 #   cfgsync [msg]        commit + push ~/Code/term-config (optional commit message)
 #
+# ── tmux mental model ────────────────────────────────────────────────
+#   Session  = one project  (e.g. "my-api", "frontend")
+#   Window   = a purpose panel inside a project (code / run / ai / term)
+#              → switch windows to move between nvim, run, ai, terminal
+#   Pane     = a split inside a window (rarely needed)
+#              → switch panes only if you manually split a window
+#
 # ── tmux projects ────────────────────────────────────────────────────
 #   t / tp               fzf-pick and open a project (creates session if new)
-#   tp .                 use current directory as project
+#   tp .                 open current directory as a project
 #   tls                  list all active tmux sessions
 #   tterm                add a term-N window to current project
 #
-# ── trun — named run configurations (.trun file in project root) ─────
-#   trun                 fzf-pick a config and run it
-#   trun <name>          run named config  (e.g. trun frontend)
-#   trun <name> -- cmd   run explicit cmd in run-<name> window
-#   trun -- cmd          run explicit cmd in default 'run' window
+# ── tmux: switching windows (your main day-to-day navigation) ────────
+#   Alt+1  Alt+2  Alt+3  Alt+4   jump to window 1/2/3/4 — NO prefix needed
+#   prefix + e               jump to 'code'  window  (your editor)
+#   prefix + u               jump to 'run'   window
+#   prefix + i               jump to 'ai'    window
+#   prefix + o               jump to 'term'  window
+#   prefix + n / p           next / previous window
 #
-#   .trun format:        frontend: npm run dev
-#                        backend:  go run ./cmd/server
-#                        debug:    node --inspect src/index.js
+# ── tmux: switching sessions (between projects) ───────────────────────
+#   prefix + s               session + window tree — navigate with j/k, Enter
+#   prefix + ( / )           previous / next session
+#   t                        fzf project picker (from terminal, inside or outside tmux)
 #
-# ── tmux keys (prefix = Ctrl+Space) ─────────────────────────────────
-#   Alt+1/2/3/4/5        switch window directly (no prefix needed)
-#   prefix e             jump to 'code' window  (editor)
-#   prefix u             jump to 'run' window
-#   prefix i             jump to 'ai' window
-#   prefix o             jump to 'term' window
-#   prefix n / p         next / previous window
-#   prefix s             session + window tree picker
-#   prefix ( / )         previous / next session
-#   prefix d             detach (session stays alive)
-#   prefix ,             rename window     prefix $   rename session
-#   prefix |             split right       prefix -   split down
-#   prefix h/j/k/l       move between panes within a window (vim-style)
-#   prefix H/J/K/L       resize pane
-#   prefix T             add term-N window to current project
-#   prefix Enter         enter copy mode   y=copy  v=select  Esc=exit
-#   prefix r             reload tmux config
+# ── tmux: other keys (prefix = Ctrl+Space) ───────────────────────────
+#   prefix + d               detach  (session stays alive in background)
+#   prefix + ,               rename current window
+#   prefix + $               rename current session
+#   prefix + |               split window vertically   (creates a pane)
+#   prefix + -               split window horizontally (creates a pane)
+#   prefix + h/j/k/l         move between panes  (only if window is split)
+#   prefix + H/J/K/L         resize pane
+#   prefix + T               add a new term-N window
+#   prefix + Enter           enter scroll/copy mode
+#                              v=select  y=copy to clipboard  Esc=exit
+#   prefix + r               reload tmux config
+#
+# ── trun — named run configs (.trun file in project root) ────────────
+#   trun                     fzf-pick a config and run it
+#   trun <name>              run named config  (e.g. trun frontend)
+#   trun <name> -- <cmd>     run explicit cmd in run-<name> window
+#   trun -- <cmd>            run explicit cmd in default 'run' window
+#
+#   .trun format:            frontend: npm run dev
+#                            backend:  go run ./cmd/server
+#                            debug:    node --inspect src/index.js
 #
 # CHEATSHEET END
 
