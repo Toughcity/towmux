@@ -4,6 +4,7 @@
 
 # install.sh itself depends on this
 brew "stow"
+brew "tmux"
 
 # zsh layer
 brew "antidote"      # plugin manager (sourced in .zshrc)

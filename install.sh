@@ -25,8 +25,13 @@ fi
 
 # 4. Stow dotfiles into $HOME
 echo "==> Linking dotfiles via stow"
+mkdir -p "$HOME/.local/bin" "$HOME/.config/tmux"
 stow --target="$HOME" --restow zsh
 stow --target="$HOME" --restow nvim
+stow --target="$HOME" --restow tmux
+
+# 5. Ensure tp / trun / tterm are executable after stow
+chmod +x "$HOME/.local/bin/tp" "$HOME/.local/bin/trun" "$HOME/.local/bin/tterm" 2>/dev/null || true
 
 cat <<'EOF'
 
@@ -36,8 +41,10 @@ Next steps:
   1. Open a new terminal so the new ~/.zshrc loads.
   2. Run `nvim` once — LazyVim will bootstrap lazy.nvim and install all plugins.
   3. Set your terminal font to "MesloLGS Nerd Font" so p10k glyphs render.
+  4. Run `tp .` inside any project directory to open your first tmux project.
 
 Refreshing later:
   brew upgrade               # latest brew packages
   nvim +':Lazy sync' +qa     # latest nvim plugins (rewrites lazy-lock.json — commit it)
+  tp                         # open / switch tmux project (fzf picker)
 EOF

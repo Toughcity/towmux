@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# trun <command> — run command in the stable 'run' window of the current session.
+# Kills any running process first (JetBrains-style re-run in same panel).
+set -euo pipefail
+
+[[ -z "${TMUX:-}" ]] && { echo "trun: not inside tmux" >&2; exit 1; }
+[[ $# -eq 0 ]]       && { echo "usage: trun <command...>" >&2; exit 1; }
+
+session=$(tmux display-message -p '#S')
+target="$session:run"
+
+if ! tmux list-windows -t "$session" -F '#W' 2>/dev/null | grep -q '^run$'; then
+  echo "trun: no 'run' window in session '$session' — open a project with: tp <path>" >&2
+  exit 1
+fi
+
+# Kill whatever is running (C-c), clear the prompt line
+tmux send-keys -t "$target" C-c "" 2>/dev/null || true
+tmux send-keys -t "$target" C-u "" 2>/dev/null || true
+
+# Run the new command
+tmux send-keys -t "$target" "$*" Enter
+
+# Bring run window into focus
+tmux select-window -t "$target"

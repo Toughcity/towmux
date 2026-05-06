@@ -49,6 +49,8 @@ alias lg='lazygit'
 alias zshconfig='${EDITOR:-nvim} ~/.zshrc'
 alias cheat='_print_cheatsheet'
 alias cfgsync='_cfgsync'
+alias t='tp'
+alias tls='tmux ls 2>/dev/null || echo "no tmux sessions"'
 
 # ── 8. dotfiles sync ─────────────────────────────────────────────────
 _cfgsync() {
@@ -71,7 +73,16 @@ _cfgsync() {
 # ── 9. p10k prompt ───────────────────────────────────────────────────
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# ── 10. cheatsheet (run `cheat` to print this) ───────────────────────
+# ── 10. tmux session hint (non-intrusive) ────────────────────────────
+if command -v tmux &>/dev/null && [[ -z "$TMUX" ]]; then
+  _n=$(tmux ls 2>/dev/null | wc -l | tr -d ' ')
+  if [[ "$_n" -gt 0 ]]; then
+    echo "  ${_n} tmux session(s) — run \`t\` to switch"
+  fi
+  unset _n
+fi
+
+# ── 11. cheatsheet (run `cheat` to print this) ───────────────────────
 # CHEATSHEET START — keep this marker so the `cheat` function can find it
 #
 # ── Navigation ───────────────────────────────────────────────────────
@@ -129,6 +140,28 @@ _cfgsync() {
 #   zshconfig            edit ~/.zshrc
 #   cheat                print this cheatsheet
 #   cfgsync [msg]        commit + push ~/Code/term-config (optional commit message)
+#
+# ── tmux projects ────────────────────────────────────────────────────
+#   t / tp               fzf-pick and open a project (creates session if new)
+#   tp .                 use current directory as project
+#   trun <cmd>           run command in stable 'run' window (JetBrains-style)
+#   tterm                add a new terminal window to current project
+#   tls                  list all active tmux sessions
+#
+# ── tmux keys (prefix = Ctrl+Space) ─────────────────────────────────
+#   prefix d             detach (session stays alive)
+#   prefix s             session + window tree picker
+#   prefix ( / )         previous / next session
+#   prefix 1-4           jump to window by number
+#   prefix n / p         next / previous window
+#   prefix ,             rename window     prefix $   rename session
+#   prefix |             split right       prefix -   split down
+#   prefix h/j/k/l       move between panes (vim-style)
+#   prefix H/J/K/L       resize pane
+#   prefix T             add term-N window to current project
+#   prefix R             prompt: run command in stable run pane
+#   prefix Enter         enter copy mode   y=copy  v=select  Esc=exit
+#   prefix r             reload tmux config
 #
 # CHEATSHEET END
 

@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+# tp [path] — open or switch to a tmux project session
+#   tp          fzf-pick from ~/Code/*
+#   tp .        use current directory
+#   tp <path>   use that path
+set -euo pipefail
+
+CODE_DIR="${CODE_DIR:-$HOME/Code}"
+
+_pick_dir() {
+  find "$CODE_DIR" -mindepth 1 -maxdepth 1 -type d | sort | fzf \
+    --prompt="project> " \
+    --preview="ls --color=always {}" \
+    --height=50% \
+    --border=rounded
+}
+
+_session_name() {
+  basename "$1" | tr '[:upper:]' '[:lower:]' | tr ' .' '-'
+}
+
+_create_session() {
+  local name="$1" dir="$2"
+
+  tmux new-session -d -s "$name" -c "$dir" -n "code"
+  tmux send-keys -t "$name:code" "nvim" Enter
+
+  tmux new-window -t "$name" -n "run" -c "$dir"
+
+  tmux new-window -t "$name" -n "ai" -c "$dir"
+  if command -v opencode &>/dev/null; then
+    tmux send-keys -t "$name:ai" "opencode" Enter
+  fi
+
+  tmux new-window -t "$name" -n "term" -c "$dir"
+
+  tmux select-window -t "$name:code"
+}
+
+main() {
+  local target
+
+  case "${1:-}" in
+    "")   target=$(_pick_dir) ;;
+    ".")  target="$PWD" ;;
+    *)    target="$1" ;;
+  esac
+
+  [[ -z "${target:-}" ]] && exit 0
+  target=$(cd -- "$target" && pwd)  # resolve to absolute path
+
+  local name
+  name=$(_session_name "$target")
+
+  if ! tmux has-session -t "=$name" 2>/dev/null; then
+    _create_session "$name" "$target"
+  fi
+
+  if [[ -n "${TMUX:-}" ]]; then
+    tmux switch-client -t "=$name"
+  else
+    tmux attach-session -t "=$name"
+  fi
+}
+
+main "$@"
