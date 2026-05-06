@@ -173,6 +173,7 @@ fi
 #   prefix + $               rename current session
 #   prefix + |               split window vertically   (creates a pane)
 #   prefix + -               split window horizontally (creates a pane)
+#   prefix + =               cycle pane layout (even / main-vertical / tiled / ...)
 #   prefix + h/j/k/l         move between panes  (only if window is split)
 #   prefix + H/J/K/L         resize pane
 #   prefix + T               add a new term-N window
