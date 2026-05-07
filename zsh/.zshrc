@@ -153,7 +153,7 @@ _cfgsync() {
 #   tterm                add a term-N window to current project
 #
 # ── tmux: switching windows (your main day-to-day navigation) ────────
-#   Alt+1  Alt+2  Alt+3  Alt+4   jump to window 1/2/3/4 — NO prefix needed
+#   prefix + 1/2/3/4         jump to window by number
 #   prefix + e               jump to 'code'  window  (your editor)
 #   prefix + u               jump to 'run'   window
 #   prefix + i               jump to 'ai'    window
