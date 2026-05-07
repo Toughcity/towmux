@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# trun — run named configurations in their own stable windows (JetBrains-style)
+#
+#   trun                     fzf-pick a config from .trun, run it
+#   trun <name>              run named config from .trun
+#   trun <name> -- <cmd...>  run explicit cmd in run-<name> window
+#   trun -- <cmd...>         run explicit cmd in default 'run' window
+#
+# .trun file (place in project root, one config per line):
+#   frontend: npm run dev
+#   backend:  go run ./cmd/server
+#   test:     go test ./...
+#   debug:    node --inspect src/index.js
+
+set -euo pipefail
+
+[[ -z "${TMUX:-}" ]] && { echo "trun: not inside tmux" >&2; exit 1; }
+
+session=$(tmux display-message -p '#S')
+project_root=$(tmux display-message -p '#{session_path}')
+trun_file="$project_root/.trun"
+
+_config_cmd() {
+  local name="$1"
+  [[ -f "$trun_file" ]] || return 1
+  local result
+  result=$(grep -v '^\s*#' "$trun_file" | grep -E "^$name\s*:" | sed -E 's/^[^:]+:\s*//' | head -1)
+  [[ -n "$result" ]] && printf '%s' "$result" || return 1
+}
+
+_list_names() {
+  [[ -f "$trun_file" ]] || return 0
+  grep -v '^\s*#' "$trun_file" | grep -E '^\S+\s*:' | sed -E 's/\s*:.*//'
+}
+
+_run_in_window() {
+  local wname="$1" cmd="$2"
+  if ! tmux list-windows -t "$session" -F '#W' 2>/dev/null | grep -qx "$wname"; then
+    tmux new-window -t "$session" -n "$wname" -c "$project_root"
+  fi
+  local target="$session:$wname"
+  tmux send-keys -t "$target" C-c "" 2>/dev/null || true
+  tmux send-keys -t "$target" C-u "" 2>/dev/null || true
+  tmux send-keys -t "$target" "$cmd" Enter
+  tmux select-window -t "$target"
+}
+
+main() {
+  local name="" cmd="" found_sep=0
+  local -a pre_sep=() post_sep=()
+
+  for arg in "$@"; do
+    if [[ "$arg" == "--" && $found_sep -eq 0 ]]; then
+      found_sep=1
+    elif [[ $found_sep -eq 1 ]]; then
+      post_sep+=("$arg")
+    else
+      pre_sep+=("$arg")
+    fi
+  done
+
+  name="${pre_sep[0]:-}"
+
+  if [[ $found_sep -eq 1 ]]; then
+    [[ ${#post_sep[@]} -eq 0 ]] && { echo "trun: missing command after --" >&2; exit 1; }
+    cmd="${post_sep[*]}"
+  else
+    if [[ -z "$name" ]]; then
+      local names
+      names=$(_list_names) || true
+      if [[ -z "$names" ]]; then
+        cat >&2 <<'USAGE'
+trun: no .trun file found in project root.
+
+Create one to define run configurations:
+  frontend: npm run dev
+  backend:  go run ./cmd/server
+  test:     go test ./...
+
+Or run a one-off command in the default 'run' window:
+  trun -- npm run dev
+USAGE
+        exit 1
+      fi
+      name=$(printf '%s\n' "$names" | fzf \
+        --prompt="run> " \
+        --height=40% \
+        --border=rounded \
+        --preview="grep -E '^{}\s*:' \"$trun_file\" | sed -E 's/^[^:]+:\s*//'" \
+        --preview-window=down:2:wrap) || exit 0
+    fi
+
+    cmd=$(_config_cmd "$name") || {
+      printf 'trun: config "%s" not found in .trun\navailable:\n' "$name" >&2
+      _list_names | sed 's/^/  /' >&2
+      exit 1
+    }
+  fi
+
+  local wname
+  [[ -z "$name" ]] && wname="run" || wname="run-$name"
+  _run_in_window "$wname" "$cmd"
+}
+
+main "$@"

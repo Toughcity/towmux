@@ -49,12 +49,14 @@ alias lg='lazygit'
 alias zshconfig='${EDITOR:-nvim} ~/.zshrc'
 alias cheat='_print_cheatsheet'
 alias cfgsync='_cfgsync'
+alias t='tp'
+alias tls='tmux ls 2>/dev/null || echo "no tmux sessions"'
 
 # ── 8. dotfiles sync ─────────────────────────────────────────────────
 _cfgsync() {
   local repo="$HOME/Code/term-config"
   local msg="${1:-"sync: $(date '+%Y-%m-%d %H:%M')"}"
-  stow --target="$HOME" --dir="$repo" --restow zsh nvim
+  stow --target="$HOME" --dir="$repo" --restow zsh nvim tmux
   git -C "$repo" add -A
   if git -C "$repo" diff --cached --quiet; then
     echo "cfgsync: nothing to commit"
@@ -71,7 +73,16 @@ _cfgsync() {
 # ── 9. p10k prompt ───────────────────────────────────────────────────
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-# ── 10. cheatsheet (run `cheat` to print this) ───────────────────────
+# ── 10. tmux session hint (non-intrusive) ────────────────────────────
+if command -v tmux &>/dev/null && [[ -z "$TMUX" ]]; then
+  _n=$(tmux ls 2>/dev/null | wc -l | tr -d ' ')
+  if [[ "$_n" -gt 0 ]]; then
+    echo "  ${_n} tmux session(s) — run \`t\` to switch"
+  fi
+  unset _n
+fi
+
+# ── 11. cheatsheet (run `cheat` to print this) ───────────────────────
 # CHEATSHEET START — keep this marker so the `cheat` function can find it
 #
 # ── Navigation ───────────────────────────────────────────────────────
@@ -129,6 +140,58 @@ _cfgsync() {
 #   zshconfig            edit ~/.zshrc
 #   cheat                print this cheatsheet
 #   cfgsync [msg]        commit + push ~/Code/term-config (optional commit message)
+#
+# ── tmux mental model ────────────────────────────────────────────────
+#   Session  = one project  (e.g. "my-api", "frontend")
+#   Window   = a purpose panel inside a project (code / run / ai / term)
+#              → switch windows to move between nvim, run, ai, terminal
+#   Pane     = a split inside a window (rarely needed)
+#              → switch panes only if you manually split a window
+#
+# ── tmux projects ────────────────────────────────────────────────────
+#   t / tp               fzf-pick and open a project (creates session if new)
+#   tp .                 open current directory as a project
+#   tls                  list all active tmux sessions
+#   tterm                add a term-N window to current project
+#
+# ── tmux: switching windows (your main day-to-day navigation) ────────
+#   Alt+1  Alt+2  Alt+3  Alt+4   jump to window 1/2/3/4 — NO prefix needed
+#   prefix + e               jump to 'code'  window  (your editor)
+#   prefix + u               jump to 'run'   window
+#   prefix + i               jump to 'ai'    window
+#   prefix + o               jump to 'term'  window
+#   prefix + n / p           next / previous window
+#
+# ── tmux: switching sessions (between projects) ───────────────────────
+#   prefix + s               session + window tree — navigate with j/k, Enter
+#   prefix + ( / )           previous / next session
+#   t                        fzf project picker (from terminal, inside or outside tmux)
+#
+# ── tmux: other keys (prefix = Ctrl+Space) ───────────────────────────
+#   prefix + d               detach  (session stays alive in background)
+#   prefix + ,               rename current window
+#   prefix + $               rename current session
+#   prefix + |               split window vertically   (creates a pane)
+#   prefix + -               split window horizontally (creates a pane)
+#   prefix + =               cycle pane layout (even / main-vertical / tiled / ...)
+#   prefix + P               pull another window in as a pane (prompts for window name)
+#   prefix + B               break current pane out into its own window  (prompts for name)
+#   prefix + h/j/k/l         move between panes  (only if window is split)
+#   prefix + H/J/K/L         resize pane
+#   prefix + T               add a new term-N window
+#   prefix + Enter           enter scroll/copy mode
+#                              v=select  y=copy to clipboard  Esc=exit
+#   prefix + r               reload tmux config
+#
+# ── trun — named run configs (.trun file in project root) ────────────
+#   trun                     fzf-pick a config and run it
+#   trun <name>              run named config  (e.g. trun frontend)
+#   trun <name> -- <cmd>     run explicit cmd in run-<name> window
+#   trun -- <cmd>            run explicit cmd in default 'run' window
+#
+#   .trun format:            frontend: npm run dev
+#                            backend:  go run ./cmd/server
+#                            debug:    node --inspect src/index.js
 #
 # CHEATSHEET END
 

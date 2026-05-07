@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# tterm — add a named terminal window to the current tmux project session.
+# Auto-numbers: term, term-2, term-3, ...
+set -euo pipefail
+
+[[ -z "${TMUX:-}" ]] && { echo "tterm: not inside tmux" >&2; exit 1; }
+
+session=$(tmux display-message -p '#S')
+dir=$(tmux display-message -p '#{pane_current_path}')
+
+name="term"
+n=1
+while tmux list-windows -t "$session" -F '#W' 2>/dev/null | grep -qx "$name"; do
+  n=$((n + 1))
+  name="term-$n"
+done
+
+tmux new-window -t "$session" -n "$name" -c "$dir"
+tmux select-window -t "$session:$name"
