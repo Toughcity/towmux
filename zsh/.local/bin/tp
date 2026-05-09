@@ -28,8 +28,8 @@ _create_session() {
   tmux new-window -t "$name" -n "run" -c "$dir"
 
   tmux new-window -t "$name" -n "ai" -c "$dir"
-  if command -v opencode &>/dev/null; then
-    tmux send-keys -t "$name:ai" "opencode" Enter
+  if command -v claude &>/dev/null; then
+    tmux send-keys -t "$name:ai" "claude" Enter
   fi
 
   tmux new-window -t "$name" -n "term" -c "$dir"
