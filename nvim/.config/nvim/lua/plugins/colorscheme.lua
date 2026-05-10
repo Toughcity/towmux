@@ -1,15 +1,15 @@
 return {
   {
-    "Mofiqul/vscode.nvim",
+    "folke/tokyonight.nvim",
     priority = 1000,
     opts = {
-      style = "dark",
+      style = "night",
     },
   },
   {
     "LazyVim/LazyVim",
     opts = {
-      colorscheme = "vscode",
+      colorscheme = "tokyonight",
     },
   },
 }
