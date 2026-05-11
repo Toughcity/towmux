@@ -25,6 +25,7 @@ setopt HIST_IGNORE_DUPS HIST_IGNORE_ALL_DUPS HIST_IGNORE_SPACE
 setopt HIST_VERIFY HIST_REDUCE_BLANKS HIST_FIND_NO_DUPS
 
 # ── 4. completion + plugins (antidote) ───────────────────────────────
+bindkey -e                         # force emacs keymap — no vi-mode
 # compinit must run before plugins that use compdef (git, brew, etc.)
 autoload -Uz compinit && compinit
 source /opt/homebrew/opt/antidote/share/antidote/antidote.zsh
