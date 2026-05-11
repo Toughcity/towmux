@@ -27,7 +27,7 @@
 ## Finding Things
 - `<Space><Space>` — find files
 - `<Space>ff` — find files
-- `<Space>fp` — find projects (shows ~/Code and ~/Code-Safad)
+- `<Space>fp` — find projects (search roots come from $DEV_DIRS; defaults to ~/Code)
 - `<Space>fb` — find open buffers
 - `<Space>fr` — recent files
 - `<Space>sg` — search (grep) inside files

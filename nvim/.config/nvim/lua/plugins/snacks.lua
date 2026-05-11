@@ -1,3 +1,14 @@
+-- Project search roots come from $DEV_DIRS (colon-separated, like $PATH).
+-- Override in ~/.zshrc.local: export DEV_DIRS="$HOME/Code:$HOME/Work"
+local function dev_dirs()
+  local raw = vim.env.DEV_DIRS or "~/Code"
+  local dirs = {}
+  for dir in raw:gmatch("[^:]+") do
+    table.insert(dirs, dir)
+  end
+  return dirs
+end
+
 return {
   "folke/snacks.nvim",
   opts = {
@@ -9,7 +20,7 @@ return {
     picker = {
       sources = {
         projects = {
-          dev = { "~/Code", "~/Code-Safad" },
+          dev = dev_dirs(),
         },
         explorer = {
           exclude = { "*.uid" },

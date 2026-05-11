@@ -43,6 +43,16 @@ echo 'export MY_VAR=value' >> ~/.zshrc.local
 `~/.zshrc` sources that file if it exists, so the settings stay local and out
 of the repo.
 
+### Project search roots
+
+`DEV_DIRS` is a colon-separated list of directories that the nvim project
+picker (`<Space>fp`) searches. Defaults to `~/Code`. Add more in
+`~/.zshrc.local`:
+
+```sh
+export DEV_DIRS="$HOME/Code:$HOME/Work:$HOME/Forks"
+```
+
 ## Refreshing
 
 ```sh
