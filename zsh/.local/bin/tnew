@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# tnew [name] — start a plain tmux session, independent of the tp project workflow.
+#   tnew          create/attach session "scratch" (auto-numbered if taken)
+#   tnew <name>   create/attach session with that name
+# Single default window, current directory as cwd, no nvim/claude auto-launch.
+set -euo pipefail
+
+if [[ -n "${TMUX:-}" ]]; then
+  dir=$(tmux display-message -p '#{pane_current_path}')
+else
+  dir="$PWD"
+fi
+
+if [[ $# -gt 0 && -n "$1" ]]; then
+  name="$1"
+else
+  name="scratch"
+  n=1
+  while tmux has-session -t "=$name" 2>/dev/null; do
+    n=$((n + 1))
+    name="scratch-$n"
+  done
+fi
+
+if ! tmux has-session -t "=$name" 2>/dev/null; then
+  tmux new-session -d -s "$name" -c "$dir"
+fi
+
+if [[ -n "${TMUX:-}" ]]; then
+  tmux switch-client -t "=$name"
+else
+  tmux attach-session -t "=$name"
+fi
