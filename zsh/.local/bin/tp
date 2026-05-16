@@ -1,22 +1,74 @@
 #!/usr/bin/env bash
 # tp [path] — open or switch to a tmux project session
-#   tp          fzf-pick from ~/Code/*
+#   tp          fzf-pick from ~/Code/* + running sessions
+#                 Enter   = attach/open
+#                 Ctrl-X  = kill highlighted session, reload list
 #   tp .        use current directory
 #   tp <path>   use that path
 set -euo pipefail
 
 CODE_DIR="${CODE_DIR:-$HOME/Code}"
 
-_pick_dir() {
-  find "$CODE_DIR" -mindepth 1 -maxdepth 1 -type d | sort | fzf \
-    --prompt="project> " \
-    --preview="eza --color=always {}" \
-    --height=50% \
-    --border=rounded
-}
-
 _session_name() {
   basename "$1" | tr '[:upper:]' '[:lower:]' | tr ' .' '-'
+}
+
+# Print rows as TAB-separated: status<TAB>name<TAB>path<TAB>display
+# Running sessions first (marked ●), then idle CODE_DIR entries.
+# Path is empty for "session-only" rows (no matching dir under CODE_DIR).
+_list_rows() {
+  local running_list
+  running_list=$(tmux list-sessions -F '#S' 2>/dev/null | sort || true)
+
+  # Build "name<TAB>dir" index for dirs under CODE_DIR.
+  local dir_index=""
+  if [[ -d "$CODE_DIR" ]]; then
+    local d name
+    while IFS= read -r d; do
+      name=$(_session_name "$d")
+      dir_index+="${name}	${d}"$'\n'
+    done < <(find "$CODE_DIR" -mindepth 1 -maxdepth 1 -type d | sort)
+  fi
+
+  # Running sessions first — look up their dir from the index, if any.
+  local s path note
+  if [[ -n "$running_list" ]]; then
+    while IFS= read -r s; do
+      [[ -z "$s" ]] && continue
+      path=""
+      if [[ -n "$dir_index" ]]; then
+        path=$(awk -F'\t' -v n="$s" '$1==n {print $2; exit}' <<< "$dir_index")
+      fi
+      note=""
+      [[ -z "$path" ]] && note="  (session only)"
+      printf '%s\t%s\t%s\t● %s%s\n' "RUNNING" "$s" "$path" "$s" "$note"
+    done <<< "$running_list"
+  fi
+
+  # Idle dirs — those whose mapped session-name is not currently running.
+  if [[ -n "$dir_index" ]]; then
+    local idx_name idx_dir
+    while IFS=$'\t' read -r idx_name idx_dir; do
+      [[ -z "$idx_name" ]] && continue
+      if [[ -n "$running_list" ]] \
+         && awk -v n="$idx_name" '$0==n {found=1; exit} END {exit !found}' <<< "$running_list"; then
+        continue
+      fi
+      printf '%s\t%s\t%s\t  %s\n' "IDLE" "$idx_name" "$idx_dir" "$(basename "$idx_dir")"
+    done <<< "$dir_index"
+  fi
+}
+
+_pick_row() {
+  _list_rows | fzf \
+    --prompt="project> " \
+    --delimiter=$'\t' \
+    --with-nth=4 \
+    --header='enter: open  ·  ctrl-x: kill session' \
+    --preview='if [ -n {3} ]; then eza --color=always {3}; else tmux list-windows -t "={2}" 2>/dev/null; fi' \
+    --bind 'ctrl-x:execute-silent(tp --__kill {2})+reload(tp --__list)' \
+    --height=50% \
+    --border=rounded
 }
 
 _create_session() {
@@ -35,30 +87,56 @@ _create_session() {
   tmux select-window -t "$name:code"
 }
 
+_attach() {
+  local name="$1"
+  if [[ -n "${TMUX:-}" ]]; then
+    tmux switch-client -t "=$name"
+  else
+    tmux attach-session -t "=$name"
+  fi
+}
+
 main() {
-  local target
+  # Internal: used by fzf reload binding.
+  if [[ "${1:-}" == "--__list" ]]; then
+    _list_rows
+    exit 0
+  fi
+
+  # Internal: used by fzf ctrl-x binding. Kills session by exact name.
+  if [[ "${1:-}" == "--__kill" ]]; then
+    shift
+    [[ -n "${1:-}" ]] && tmux kill-session -t "=$1" 2>/dev/null || true
+    exit 0
+  fi
+
+  local target=""
+  local name=""
 
   case "${1:-}" in
-    "")   target=$(_pick_dir) ;;
-    ".")  target="$PWD" ;;
-    *)    target="$1" ;;
+    "")
+      local sel status path display
+      sel=$(_pick_row || true)
+      [[ -z "$sel" ]] && exit 0
+      IFS=$'\t' read -r status name path display <<< "$sel"
+      if [[ "$status" == "RUNNING" && -z "$path" ]]; then
+        _attach "$name"
+        exit 0
+      fi
+      target="$path"
+      ;;
+    ".") target="$PWD" ;;
+    *)   target="$1" ;;
   esac
 
-  [[ -z "${target:-}" ]] && exit 0
-  target=$(cd -- "$target" && pwd)  # resolve to absolute path
-
-  local name
+  target=$(cd -- "$target" && pwd)
   name=$(_session_name "$target")
 
   if ! tmux has-session -t "=$name" 2>/dev/null; then
     _create_session "$name" "$target"
   fi
 
-  if [[ -n "${TMUX:-}" ]]; then
-    tmux switch-client -t "=$name"
-  else
-    tmux attach-session -t "=$name"
-  fi
+  _attach "$name"
 }
 
 main "$@"

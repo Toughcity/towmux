@@ -149,9 +149,15 @@ _cfgsync() {
 #
 # ── tmux projects ────────────────────────────────────────────────────
 #   t / tp               fzf-pick and open a project (creates session if new)
+#                          running sessions appear at top, marked ●
+#                          Enter   = attach/open
+#                          Ctrl-X  = kill highlighted session, reload list
 #   tp .                 open current directory as a project
 #   tls                  list all active tmux sessions
 #   tterm                add a term-N window to current project
+#   tnew [name]          start a plain session (no code/ai/term windows)
+#                          tnew         → auto-named "scratch", "scratch-2", ...
+#                          tnew foo     → named session "foo"
 #
 # ── tmux: switching windows (your main day-to-day navigation) ────────
 #   prefix + 1/2/3/4         jump to window by number
