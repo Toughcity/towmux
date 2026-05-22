@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+# tlayout [windows|ide] — convert the current tmux session to a different layout.
+#   tlayout         fzf-pick the target layout
+#   tlayout ide     convert to IDE layout (one window with panes)
+#   tlayout windows convert to windows layout (one window per role)
+# Running processes (nvim, claude, dev servers) are preserved via join/break-pane.
+set -euo pipefail
+
+[[ -z "${TMUX:-}" ]] && { echo "tlayout: not inside tmux" >&2; exit 1; }
+
+session=$(tmux display-message -p '#S')
+project_root=$(tmux display-message -p '#{session_path}')
+
+_current_layout() {
+  # IDE = any pane in the session is tagged with @layout-name.
+  if [[ -n $(tmux list-panes -s -t "$session" -F '#{@layout-name}' 2>/dev/null \
+             | grep -v '^$' | head -1) ]]; then
+    echo ide
+  else
+    echo windows
+  fi
+}
+
+_pick_layout() {
+  # Hosted inside a tmux display-popup (see `bind L` in tmux.conf): let fzf
+  # run full-screen to fill the popup. Do NOT add --height — fzf's height
+  # mode misbehaves inside a popup and the picker flashes open then exits.
+  # The popup draws its own border, so --border is unnecessary too.
+  printf 'windows\nide\n' | fzf \
+    --prompt='target layout> ' \
+    --no-multi \
+    --header='enter: switch to this layout (processes preserved)' \
+    --preview-window='right:60%:wrap' \
+    --preview='case {} in
+                 windows) printf "windows layout\n\n  [code]   [ai]   [term]\n\nThree separate windows.\nSwitch with prefix+1/2/3 or prefix+e/i/o.\n" ;;
+                 ide)     printf "ide layout\n\n  +-----------+--------+\n  |           |        |\n  |   nvim    |   ai   |\n  |           |        |\n  +-----------+--------+\n  |  term  |  run-... |\n  +--------------------+\n\nSingle window, panes side-by-side.\nUse prefix+z to zoom a pane.\n" ;;
+               esac'
+}
+
+# Convert windows → IDE. Assumes a `code` window exists as the base.
+_to_ide() {
+  if ! tmux has-session -t "$session:code" 2>/dev/null; then
+    echo "tlayout: no 'code' window — refusing to convert" >&2
+    exit 1
+  fi
+
+  local code_panes
+  code_panes=$(tmux list-panes -t "$session:code" -F '#{pane_id}' | wc -l | tr -d ' ')
+  if [[ "$code_panes" -gt 1 ]]; then
+    tmux display-message "tlayout: 'code' window already has multiple panes"
+    exit 0
+  fi
+
+  local top_left
+  top_left=$(tmux list-panes -t "$session:code" -F '#{pane_id}' | head -1)
+  tmux set-option -p -t "$top_left" @layout-name code
+
+  # Bottom strip from term window (30% height).
+  local bottom_strip=""
+  if tmux has-session -t "$session:term" 2>/dev/null; then
+    bottom_strip=$(tmux list-panes -t "$session:term" -F '#{pane_id}' | head -1)
+    tmux join-pane -s "$bottom_strip" -t "$top_left" -v -l '30%'
+    tmux set-option -p -t "$bottom_strip" @layout-name term
+  fi
+
+  # Claude on the top-right (30% width).
+  if tmux has-session -t "$session:ai" 2>/dev/null; then
+    local ai_pane
+    ai_pane=$(tmux list-panes -t "$session:ai" -F '#{pane_id}' | head -1)
+    tmux join-pane -s "$ai_pane" -t "$top_left" -h -l '30%'
+    tmux set-option -p -t "$ai_pane" @layout-name ai
+  fi
+
+  # run-* windows into bottom strip.
+  if [[ -n "$bottom_strip" ]]; then
+    local prev="$bottom_strip"
+    local wname run_pane
+    while IFS= read -r wname; do
+      [[ "$wname" =~ ^run(-.+)?$ ]] || continue
+      [[ "$wname" == "term" ]] && continue
+      run_pane=$(tmux list-panes -t "$session:$wname" -F '#{pane_id}' | head -1)
+      tmux join-pane -s "$run_pane" -t "$prev" -h
+      tmux set-option -p -t "$run_pane" @layout-name "$wname"
+      prev="$run_pane"
+    done < <(tmux list-windows -t "$session" -F '#W')
+  fi
+
+  # Rename the now-combined window to "ide" and turn on per-pane titles.
+  tmux rename-window -t "$session:code" "ide"
+  tmux set-option -w -t "$session:ide" pane-border-status top
+
+  tmux select-pane -t "$top_left"
+}
+
+# Convert IDE → windows. Breaks out every tagged pane from the IDE window.
+_to_windows() {
+  local ide_window
+  ide_window=$(tmux list-windows -t "$session" -F '#{window_id} #{window_panes}' \
+               | awk '$2 > 1 {print $1; exit}')
+  if [[ -z "$ide_window" ]]; then
+    tmux display-message "tlayout: no multi-pane window to break out"
+    exit 0
+  fi
+
+  # First pane stays — rename its window after its tag (or 'code' as default).
+  local first_tag first_pane
+  first_pane=$(tmux list-panes -t "$ide_window" -F '#{pane_id}' | head -1)
+  first_tag=$(tmux display-message -p -t "$first_pane" '#{@layout-name}')
+  [[ -z "$first_tag" ]] && first_tag=code
+  tmux rename-window -t "$ide_window" "$first_tag"
+  tmux set-option -pu -t "$first_pane" @layout-name 2>/dev/null || true
+  # Single-pane windows don't need the title row — revert to global default.
+  tmux set-option -wu -t "$ide_window" pane-border-status 2>/dev/null || true
+
+  # Break out every other pane, naming the new window after its tag.
+  local pane_id wname idx=0
+  while IFS=$'\t' read -r pane_id wname; do
+    if [[ $idx -eq 0 ]]; then
+      idx=1
+      continue
+    fi
+    [[ -z "$wname" ]] && wname="pane-$pane_id"
+    tmux break-pane -d -s "$pane_id" -n "$wname"
+    tmux set-option -pu -t "$pane_id" @layout-name 2>/dev/null || true
+  done < <(tmux list-panes -t "$ide_window" -F '#{pane_id}	#{@layout-name}')
+
+  tmux select-window -t "$session:$first_tag"
+}
+
+main() {
+  local target="${1:-}"
+  if [[ -z "$target" ]]; then
+    target=$(_pick_layout || true)
+  fi
+  [[ -z "$target" ]] && exit 0
+
+  local current
+  current=$(_current_layout)
+  if [[ "$current" == "$target" ]]; then
+    tmux display-message "tlayout: already $target"
+    exit 0
+  fi
+
+  case "$target" in
+    ide)     _to_ide ;;
+    windows) _to_windows ;;
+    *)
+      echo "tlayout: unknown layout '$target' (use windows|ide)" >&2
+      exit 2
+      ;;
+  esac
+
+  tmux display-message "tlayout: switched to $target"
+}
+
+main "$@"
