@@ -155,7 +155,7 @@ _cfgsync() {
 #                        new sessions prompt for a layout:
 #                          windows  = code / ai / term as separate windows (default)
 #                          ide      = single window, nvim left, ai top-right,
-#                                     term + .trun panes across the bottom
+#                                     term across the bottom
 #                        set TP_LAYOUT=ide|windows to skip the prompt
 #   tp .                 open current directory as a project
 #   tls                  list all active tmux sessions
