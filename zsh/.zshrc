@@ -152,12 +152,20 @@ _cfgsync() {
 #                          running sessions appear at top, marked ●
 #                          Enter   = attach/open
 #                          Ctrl-X  = kill highlighted session, reload list
+#                        new sessions prompt for a layout:
+#                          windows  = code / ai / term as separate windows (default)
+#                          ide      = single window, nvim left, ai top-right,
+#                                     term + .trun panes across the bottom
+#                        set TP_LAYOUT=ide|windows to skip the prompt
 #   tp .                 open current directory as a project
 #   tls                  list all active tmux sessions
 #   tterm                add a term-N window to current project
 #   tnew [name]          start a plain session (no code/ai/term windows)
 #                          tnew         → auto-named "scratch", "scratch-2", ...
 #                          tnew foo     → named session "foo"
+#   tlayout [ide|windows]   convert the CURRENT session between layouts
+#                             prefix + L  → interactive picker
+#                             preserves running processes via join/break-pane
 #
 # ── tmux: switching windows (your main day-to-day navigation) ────────
 #   prefix + 1/2/3/4         jump to window by number

@@ -30,8 +30,8 @@ stow --target="$HOME" --restow zsh
 stow --target="$HOME" --restow nvim
 stow --target="$HOME" --restow tmux
 
-# 5. Ensure tp / trun / tterm / tnew are executable after stow
-chmod +x "$HOME/.local/bin/tp" "$HOME/.local/bin/trun" "$HOME/.local/bin/tterm" "$HOME/.local/bin/tnew" 2>/dev/null || true
+# 5. Ensure tp / trun / tterm / tnew / tlayout are executable after stow
+chmod +x "$HOME/.local/bin/tp" "$HOME/.local/bin/trun" "$HOME/.local/bin/tterm" "$HOME/.local/bin/tnew" "$HOME/.local/bin/tlayout" 2>/dev/null || true
 
 cat <<'EOF'
 

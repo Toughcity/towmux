@@ -1,34 +1,44 @@
 #!/usr/bin/env bash
 # tp [path] — open or switch to a tmux project session
-#   tp          fzf-pick from ~/Code/* + running sessions
+#   tp          fzf-pick from CODE_DIRS roots + running sessions
 #                 Enter   = attach/open
 #                 Ctrl-X  = kill highlighted session, reload list
 #   tp .        use current directory
 #   tp <path>   use that path
+#
+# When the chosen session doesn't already exist, prompts for a layout:
+#   windows   3 windows (code / ai / term) — current default
+#   ide       one window: nvim left, claude top-right, term + .trun panes bottom
+# Set TP_LAYOUT=windows|ide in the env to skip the prompt.
 set -euo pipefail
 
-CODE_DIR="${CODE_DIR:-$HOME/Code}"
+# Project roots to scan, space-separated. Override via the CODE_DIRS env var.
+CODE_DIRS="${CODE_DIRS:-$HOME/Code $HOME/Code-Safad}"
 
 _session_name() {
   basename "$1" | tr '[:upper:]' '[:lower:]' | tr ' .' '-'
 }
 
 # Print rows as TAB-separated: status<TAB>name<TAB>path<TAB>display
-# Running sessions first (marked ●), then idle CODE_DIR entries.
-# Path is empty for "session-only" rows (no matching dir under CODE_DIR).
+# Running sessions first (marked ●), then idle project entries.
+# Path is empty for "session-only" rows (no matching dir under CODE_DIRS).
 _list_rows() {
   local running_list
   running_list=$(tmux list-sessions -F '#S' 2>/dev/null | sort || true)
 
-  # Build "name<TAB>dir" index for dirs under CODE_DIR.
+  # Build "name<TAB>dir" index for project dirs under each root in CODE_DIRS.
   local dir_index=""
-  if [[ -d "$CODE_DIR" ]]; then
-    local d name
-    while IFS= read -r d; do
-      name=$(_session_name "$d")
-      dir_index+="${name}	${d}"$'\n'
-    done < <(find "$CODE_DIR" -mindepth 1 -maxdepth 1 -type d | sort)
-  fi
+  local d name root
+  while IFS= read -r d; do
+    [[ -z "$d" ]] && continue
+    name=$(_session_name "$d")
+    dir_index+="${name}	${d}"$'\n'
+  done < <(
+    for root in $CODE_DIRS; do
+      [[ -d "$root" ]] || continue
+      find "$root" -mindepth 1 -maxdepth 1 -type d
+    done | sort
+  )
 
   # Running sessions first — look up their dir from the index, if any.
   local s path note
@@ -71,7 +81,7 @@ _pick_row() {
     --border=rounded
 }
 
-_create_session() {
+_create_session_windows() {
   local name="$1" dir="$2"
 
   tmux new-session -d -s "$name" -c "$dir" -n "code"
@@ -85,6 +95,72 @@ _create_session() {
   tmux new-window -t "$name" -n "term" -c "$dir"
 
   tmux select-window -t "$name:code"
+}
+
+# IDE layout: one window with panes —
+#   top-left  : nvim (large)
+#   top-right : claude (~30% width)
+#   bottom    : term + one pane per .trun config entry (~30% height)
+# Each pane is tagged with @layout-name so `tlayout` can convert back to
+# the windows layout without losing track of which pane is which.
+_create_session_ide() {
+  local name="$1" dir="$2"
+  local trun_file="$dir/.trun"
+
+  tmux new-session -d -s "$name" -c "$dir" -n "ide"
+  tmux set-option -w -t "$name:ide" pane-border-status top
+
+  local top_left bottom_strip top_right
+  top_left=$(tmux list-panes -t "$name:ide" -F '#{pane_id}' | head -1)
+
+  bottom_strip=$(tmux split-window -v -l '30%' -t "$top_left" -c "$dir" -P -F '#{pane_id}')
+  top_right=$(tmux split-window -h -l '30%' -t "$top_left" -c "$dir" -P -F '#{pane_id}')
+
+  tmux set-option -p -t "$top_left"     @layout-name code
+  tmux set-option -p -t "$top_right"    @layout-name ai
+  tmux set-option -p -t "$bottom_strip" @layout-name term
+
+  tmux send-keys -t "$top_left" "nvim" Enter
+  if command -v claude &>/dev/null; then
+    tmux send-keys -t "$top_right" "claude" Enter
+  fi
+
+  if [[ -f "$trun_file" ]]; then
+    local prev="$bottom_strip"
+    local line label cmd new_pane
+    while IFS= read -r line; do
+      [[ -z "$line" ]] && continue
+      [[ "$line" =~ ^[[:space:]]*# ]] && continue
+      [[ "$line" =~ ^[[:space:]]*([^:[:space:]]+)[[:space:]]*:[[:space:]]*(.*)$ ]] || continue
+      label="${BASH_REMATCH[1]}"
+      cmd="${BASH_REMATCH[2]}"
+      [[ -z "$cmd" ]] && continue
+      new_pane=$(tmux split-window -h -t "$prev" -c "$dir" -P -F '#{pane_id}')
+      tmux set-option -p -t "$new_pane" @layout-name "run-$label"
+      tmux send-keys -t "$new_pane" "$cmd" Enter
+      prev="$new_pane"
+    done < "$trun_file"
+  fi
+
+  tmux select-pane -t "$top_left"
+}
+
+_pick_layout() {
+  if [[ -n "${TP_LAYOUT:-}" ]]; then
+    printf '%s\n' "$TP_LAYOUT"
+    return 0
+  fi
+  printf 'windows\nide\n' | fzf \
+    --prompt='layout> ' \
+    --height=40% \
+    --border=rounded \
+    --no-multi \
+    --header='enter: create session with this layout' \
+    --preview-window='right:60%:wrap' \
+    --preview='case {} in
+                 windows) printf "windows layout — current default\n\n  [code]   [ai]   [term]\n\nThree separate windows.\nSwitch with prefix+1/2/3 or prefix+e/i/o.\nrun-* windows added on demand by trun.\n" ;;
+                 ide)     printf "ide layout — single window with panes\n\n  +-----------+--------+\n  |           |        |\n  |   nvim    |   ai   |\n  |           |        |\n  +-----------+--------+\n  |  term  |  run-... |\n  +--------------------+\n\nBottom strip = term + one pane\nper .trun config entry.\nUse prefix+z to zoom a pane.\n" ;;
+               esac'
 }
 
 _attach() {
@@ -133,7 +209,17 @@ main() {
   name=$(_session_name "$target")
 
   if ! tmux has-session -t "=$name" 2>/dev/null; then
-    _create_session "$name" "$target"
+    local layout
+    layout=$(_pick_layout || true)
+    [[ -z "$layout" ]] && exit 0
+    case "$layout" in
+      ide)     _create_session_ide     "$name" "$target" ;;
+      windows) _create_session_windows "$name" "$target" ;;
+      *)
+        echo "tp: unknown layout '$layout'" >&2
+        exit 1
+        ;;
+    esac
   fi
 
   _attach "$name"
