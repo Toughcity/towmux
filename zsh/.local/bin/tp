@@ -1,34 +1,39 @@
 #!/usr/bin/env bash
 # tp [path] — open or switch to a tmux project session
-#   tp          fzf-pick from ~/Code/* + running sessions
+#   tp          fzf-pick from CODE_DIRS roots + running sessions
 #                 Enter   = attach/open
 #                 Ctrl-X  = kill highlighted session, reload list
 #   tp .        use current directory
 #   tp <path>   use that path
 set -euo pipefail
 
-CODE_DIR="${CODE_DIR:-$HOME/Code}"
+# Project roots to scan, space-separated. Override via the CODE_DIRS env var.
+CODE_DIRS="${CODE_DIRS:-$HOME/Code $HOME/Code-Safad}"
 
 _session_name() {
   basename "$1" | tr '[:upper:]' '[:lower:]' | tr ' .' '-'
 }
 
 # Print rows as TAB-separated: status<TAB>name<TAB>path<TAB>display
-# Running sessions first (marked ●), then idle CODE_DIR entries.
-# Path is empty for "session-only" rows (no matching dir under CODE_DIR).
+# Running sessions first (marked ●), then idle project entries.
+# Path is empty for "session-only" rows (no matching dir under CODE_DIRS).
 _list_rows() {
   local running_list
   running_list=$(tmux list-sessions -F '#S' 2>/dev/null | sort || true)
 
-  # Build "name<TAB>dir" index for dirs under CODE_DIR.
+  # Build "name<TAB>dir" index for project dirs under each root in CODE_DIRS.
   local dir_index=""
-  if [[ -d "$CODE_DIR" ]]; then
-    local d name
-    while IFS= read -r d; do
-      name=$(_session_name "$d")
-      dir_index+="${name}	${d}"$'\n'
-    done < <(find "$CODE_DIR" -mindepth 1 -maxdepth 1 -type d | sort)
-  fi
+  local d name root
+  while IFS= read -r d; do
+    [[ -z "$d" ]] && continue
+    name=$(_session_name "$d")
+    dir_index+="${name}	${d}"$'\n'
+  done < <(
+    for root in $CODE_DIRS; do
+      [[ -d "$root" ]] || continue
+      find "$root" -mindepth 1 -maxdepth 1 -type d
+    done | sort
+  )
 
   # Running sessions first — look up their dir from the index, if any.
   local s path note
