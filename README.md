@@ -37,6 +37,19 @@ wires the zsh + tmux references into your config, and stows the neovim config.
 Re-run it anytime — it's idempotent, and re-running updates the managed blocks
 in place (useful if you move the repo).
 
+## Uninstall
+
+```sh
+cd ~/Code/term-config
+./uninstall.sh           # detach from your machine
+./uninstall.sh --brew    # also uninstall the Brewfile packages
+```
+
+`uninstall.sh` removes the managed block from `~/.zshrc` and the tmux config
+(preserving your own settings), drops the leftover symlinks and stowed neovim
+config, and deletes the generated plugin cache. Homebrew, the Brewfile packages,
+and NVM are shared tooling and are left in place unless you pass `--brew`.
+
 After install: open a new terminal, then run `nvim` once to let LazyVim
 bootstrap its plugins.
 
