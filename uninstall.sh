@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Revert everything install.sh wires into your machine.
 # Idempotent — safe to re-run, and safe to run whether you installed via the
-# current "source from repo" approach or the older stow-symlink approach.
+# current "source from repo" approach or the older symlink approach.
 #
 # By default this only touches files install.sh manages:
 #   - removes the term-config block from ~/.zshrc and ~/.config/tmux/tmux.conf
 #     (or drops the whole file if it was a legacy symlink into this repo)
-#   - removes leftover stow symlinks for .p10k.zsh, .zsh_plugins.txt and the
+#   - removes leftover symlinks for .p10k.zsh, .zsh_plugins.txt and the
 #     tp/trun/tterm/tnew/tlayout helpers
-#   - unstows the neovim config from ~/.config/nvim
+#   - removes the neovim config symlinks from ~/.config/nvim
 #   - deletes antidote's generated plugin cache inside the repo
 #
 # Homebrew, the Brewfile packages, and NVM are shared tooling and are left in
@@ -78,7 +78,7 @@ echo "==> Detaching shell + tmux config"
 detach "$HOME/.zshrc"
 detach "$HOME/.config/tmux/tmux.conf"
 
-echo "==> Removing leftover stow symlinks"
+echo "==> Removing leftover symlinks"
 for f in "$HOME/.p10k.zsh" "$HOME/.zsh_plugins.txt" \
          "$HOME/.local/bin/tp"   "$HOME/.local/bin/trun"  \
          "$HOME/.local/bin/tterm" "$HOME/.local/bin/tnew" \
@@ -89,11 +89,15 @@ for f in "$HOME/.p10k.zsh" "$HOME/.zsh_plugins.txt" \
   fi
 done
 
-echo "==> Unstowing neovim config"
-if command -v stow >/dev/null 2>&1; then
-  stow --target="$HOME" -D nvim 2>/dev/null || true
-else
-  echo "   stow not installed — skipping (was it already removed?)"
+echo "==> Removing neovim config symlinks"
+NVIM_DST="$HOME/.config/nvim"
+if [[ -d "$NVIM_DST" ]]; then
+  find "$NVIM_DST" -type l 2>/dev/null | while IFS= read -r link; do
+    if link_into_repo "$link"; then rm -f "$link"; fi
+  done
+  # Clean up directories left empty once our links are gone (keeps the dir if
+  # unrelated files such as a .claude/ folder still live there).
+  find "$NVIM_DST" -type d -empty -delete 2>/dev/null || true
 fi
 
 echo "==> Removing generated antidote cache"

@@ -82,9 +82,25 @@ $MARK_END
 EOF
 )"
 
-# 6. Stow neovim config into ~/.config/nvim (this one is a full config we own)
-echo "==> Linking neovim config via stow"
-stow --target="$HOME" --restow nvim
+# 6. Symlink the neovim config into ~/.config/nvim. nvim has no "source a
+#    file" hook, so this is the one part that must be linked — but with plain
+#    `ln`, not stow. We link per-file (not the whole dir) so unrelated files
+#    already in ~/.config/nvim are left alone.
+echo "==> Linking neovim config"
+NVIM_SRC="$REPO/nvim/.config/nvim"
+NVIM_DST="$HOME/.config/nvim"
+mkdir -p "$NVIM_DST"
+# Drop our own symlinks whose source file was removed from the repo.
+find "$NVIM_DST" -type l 2>/dev/null | while IFS= read -r link; do
+  tgt="$(readlink "$link")"; [[ "$tgt" != /* ]] && tgt="$(dirname "$link")/$tgt"
+  [[ "$tgt" == "$NVIM_SRC"/* && ! -e "$link" ]] && rm -f "$link"
+done
+# Link every config file from the repo, recreating the directory structure.
+find "$NVIM_SRC" -type f -print0 | while IFS= read -r -d '' f; do
+  rel="${f#"$NVIM_SRC"/}"
+  mkdir -p "$NVIM_DST/$(dirname "$rel")"
+  ln -sfn "$f" "$NVIM_DST/$rel"
+done
 
 cat <<EOF
 

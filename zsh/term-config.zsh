@@ -71,8 +71,14 @@ alias tls='tmux ls 2>/dev/null || echo "no tmux sessions"'
 _cfgsync() {
   local repo="${TERM_CONFIG_DIR:h}"
   local msg="${1:-"sync: $(date '+%Y-%m-%d %H:%M')"}"
-  # nvim is still stowed into ~/.config; zsh + tmux are sourced from the repo.
-  stow --target="$HOME" --dir="$repo" --restow nvim
+  # zsh + tmux are sourced from the repo; only nvim is symlinked. Relink it so
+  # any newly added config files show up in ~/.config/nvim (no stow needed).
+  local nvsrc="$repo/nvim/.config/nvim" nvdst="$HOME/.config/nvim" f rel
+  for f in "$nvsrc"/**/*(.N); do
+    rel="${f#$nvsrc/}"
+    mkdir -p "$nvdst/${rel:h}"
+    ln -sfn "$f" "$nvdst/$rel"
+  done
   git -C "$repo" add -A
   if git -C "$repo" diff --cached --quiet; then
     echo "cfgsync: nothing to commit"
