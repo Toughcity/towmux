@@ -53,6 +53,11 @@ and NVM are shared tooling and are left in place unless you pass `--brew`.
 After install: open a new terminal, then run `nvim` once to let LazyVim
 bootstrap its plugins.
 
+## Credits
+
+`nvim/.config/nvim/` is based on the [LazyVim starter](https://github.com/LazyVim/starter)
+([Apache License 2.0](nvim/.config/nvim/LICENSE)), modified for this setup.
+
 ## Local overrides
 
 Put machine-specific env vars in `~/.zshrc.local`.
