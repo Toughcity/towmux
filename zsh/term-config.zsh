@@ -73,7 +73,13 @@ _cfgsync() {
   local msg="${1:-"sync: $(date '+%Y-%m-%d %H:%M')"}"
   # zsh + tmux are sourced from the repo; only nvim is symlinked. Relink it so
   # any newly added config files show up in ~/.config/nvim (no stow needed).
-  local nvsrc="$repo/nvim/.config/nvim" nvdst="$HOME/.config/nvim" f rel
+  local nvsrc="$repo/nvim/.config/nvim" nvdst="$HOME/.config/nvim" f rel tgt
+  # Drop our own symlinks whose source file was removed from the repo (matches
+  # install.sh) so deletions propagate instead of leaving dangling links.
+  for f in "$nvdst"/**/*(@N); do
+    tgt="$(readlink "$f")"; [[ "$tgt" != /* ]] && tgt="${f:h}/$tgt"
+    [[ "$tgt" == "$nvsrc"/* && ! -e "$f" ]] && rm -f "$f"
+  done
   for f in "$nvsrc"/**/*(.N); do
     rel="${f#$nvsrc/}"
     mkdir -p "$nvdst/${rel:h}"
