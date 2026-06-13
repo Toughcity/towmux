@@ -1,5 +1,9 @@
 .DS_Store
 *.swp
 
+# antidote's compiled plugin cache — generated next to .zsh_plugins.txt on
+# each shell start; machine-specific (hard-codes the antidote cache path).
+zsh/.zsh_plugins.zsh
+
 # Local-only Claude Code settings
 .claude/settings.local.json

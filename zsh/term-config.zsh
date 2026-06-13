@@ -1,3 +1,10 @@
+# ── term-config module ───────────────────────────────────────────────
+# Sourced from the user's ~/.zshrc by a managed block (see install.sh).
+# It is NOT symlinked into $HOME — everything is read straight from the
+# repo, so edits here apply on the next new shell with no re-install.
+typeset -g TERM_CONFIG_FILE="${${(%):-%x}:A}"   # absolute path to THIS file
+typeset -g TERM_CONFIG_DIR="${TERM_CONFIG_FILE:h}"
+
 # ── 0. pre-prompt output (must come before p10k instant prompt) ───────
 if command -v tmux &>/dev/null && [[ -z "$TMUX" ]]; then
   _n=$(tmux ls 2>/dev/null | wc -l | tr -d ' ')
@@ -13,7 +20,7 @@ fi
 # ── 2. environment ───────────────────────────────────────────────────
 export EDITOR=nvim
 export VISUAL=nvim
-export PATH="$HOME/.local/bin:$PATH"
+export PATH="$TERM_CONFIG_DIR/.local/bin:$HOME/.local/bin:$PATH"
 [[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
 
 # ── 3. history ───────────────────────────────────────────────────────
@@ -29,7 +36,7 @@ bindkey -e                         # force emacs keymap — no vi-mode
 # compinit must run before plugins that use compdef (git, brew, etc.)
 autoload -Uz compinit && compinit
 source /opt/homebrew/opt/antidote/share/antidote/antidote.zsh
-antidote load
+antidote load "$TERM_CONFIG_DIR/.zsh_plugins.txt"
 
 # ── 5. tool initializations ──────────────────────────────────────────
 eval "$(zoxide init zsh)"           # adds `z` and `zi`
@@ -54,7 +61,7 @@ alias ..='cd ..'
 alias ...='cd ../..'
 alias g='git'
 alias lg='lazygit'
-alias zshconfig='${EDITOR:-nvim} ~/.zshrc'
+alias zshconfig='${EDITOR:-nvim} "$TERM_CONFIG_FILE"'
 alias cheat='_print_cheatsheet'
 alias cfgsync='_cfgsync'
 alias t='tp'
@@ -62,9 +69,22 @@ alias tls='tmux ls 2>/dev/null || echo "no tmux sessions"'
 
 # ── 8. dotfiles sync ─────────────────────────────────────────────────
 _cfgsync() {
-  local repo="$HOME/Code/term-config"
+  local repo="${TERM_CONFIG_DIR:h}"
   local msg="${1:-"sync: $(date '+%Y-%m-%d %H:%M')"}"
-  stow --target="$HOME" --dir="$repo" --restow zsh nvim tmux
+  # zsh + tmux are sourced from the repo; only nvim is symlinked. Relink it so
+  # any newly added config files show up in ~/.config/nvim (no stow needed).
+  local nvsrc="$repo/nvim/.config/nvim" nvdst="$HOME/.config/nvim" f rel tgt
+  # Drop our own symlinks whose source file was removed from the repo (matches
+  # install.sh) so deletions propagate instead of leaving dangling links.
+  for f in "$nvdst"/**/*(@N); do
+    tgt="$(readlink "$f")"; [[ "$tgt" != /* ]] && tgt="${f:h}/$tgt"
+    [[ "$tgt" == "$nvsrc"/* && ! -e "$f" ]] && rm -f "$f"
+  done
+  for f in "$nvsrc"/**/*(.N); do
+    rel="${f#$nvsrc/}"
+    mkdir -p "$nvdst/${rel:h}"
+    ln -sfn "$f" "$nvdst/$rel"
+  done
   git -C "$repo" add -A
   if git -C "$repo" diff --cached --quiet; then
     echo "cfgsync: nothing to commit"
@@ -79,7 +99,7 @@ _cfgsync() {
 }
 
 # ── 9. p10k prompt ───────────────────────────────────────────────────
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+[[ ! -f "$TERM_CONFIG_DIR/.p10k.zsh" ]] || source "$TERM_CONFIG_DIR/.p10k.zsh"
 
 # ── 10. cheatsheet (run `cheat` to print this) ───────────────────────
 # CHEATSHEET START — keep this marker so the `cheat` function can find it
@@ -136,7 +156,7 @@ _cfgsync() {
 # ── Misc ─────────────────────────────────────────────────────────────
 #   gh                   GitHub CLI (auth, pr, issue, repo, run, ...)
 #   nvm / node / npm     lazy-loaded; first call is slow, then instant
-#   zshconfig            edit ~/.zshrc
+#   zshconfig            edit the term-config shell module
 #   cheat                print this cheatsheet
 #   cfgsync [msg]        commit + push ~/Code/term-config (optional commit message)
 #
@@ -210,7 +230,7 @@ _cfgsync() {
 
 _print_cheatsheet() {
   local out
-  out=$(sed -n '/^# CHEATSHEET START/,/^# CHEATSHEET END/p' ~/.zshrc \
+  out=$(sed -n '/^# CHEATSHEET START/,/^# CHEATSHEET END/p' "$TERM_CONFIG_FILE" \
         | sed -e '1d' -e '$d' -e 's/^# \{0,1\}//')
   if command -v bat >/dev/null 2>&1; then
     print -r -- "$out" | bat --style=plain --language=md --paging=never

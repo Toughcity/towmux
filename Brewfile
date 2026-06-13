@@ -2,8 +2,6 @@
 # Anything not directly required by the shell or nvim lives elsewhere
 # (per-project repos, manual install, etc).
 
-# install.sh itself depends on this
-brew "stow"
 brew "tmux"
 
 # zsh layer

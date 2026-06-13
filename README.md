@@ -9,14 +9,20 @@ Terminal + Neovim setup for a fresh macOS install.
 ├── Brewfile             # curated CLI tools — terminal/nvim only
 ├── install.sh           # idempotent bootstrap script
 ├── zsh/
-│   ├── .zshrc           # antidote, p10k, atuin, fzf, zoxide, aliases
+│   ├── term-config.zsh  # antidote, p10k, atuin, fzf, zoxide, aliases
 │   ├── .zsh_plugins.txt # antidote bundle list
-│   └── .p10k.zsh        # powerlevel10k prompt config
+│   ├── .p10k.zsh        # powerlevel10k prompt config
+│   └── .local/bin/      # tp / trun / tterm / tnew / tlayout helpers
+├── tmux/.config/tmux/   # tmux.conf
 └── nvim/.config/nvim/   # LazyVim starter (LazyVim updates via :Lazy)
 ```
 
-`stow` symlinks the contents of `zsh/` into `$HOME` and `nvim/.config/nvim/`
-into `$HOME/.config/nvim/`.
+`install.sh` does **not** overwrite your `~/.zshrc` or tmux config. It appends a
+small managed block to each (marked with `# >>> term-config >>>`) that sources
+the files above straight from this repo and adds `zsh/.local/bin` to your
+`PATH`. Anything you already have in those files is preserved. Delete the marked
+block to detach. Only the neovim config — a complete config this repo owns — is
+symlinked (with plain `ln`, no extra tooling) into `~/.config/nvim/`.
 
 ## Bootstrap a new mac
 
@@ -27,7 +33,22 @@ cd ~/Code/term-config
 ```
 
 The script installs Homebrew (if missing), runs `brew bundle`, installs NVM,
-and stows the dotfiles. Re-run it anytime — it's idempotent.
+wires the zsh + tmux references into your config, and symlinks the neovim config.
+Re-run it anytime — it's idempotent, and re-running updates the managed blocks
+in place (useful if you move the repo).
+
+## Uninstall
+
+```sh
+cd ~/Code/term-config
+./uninstall.sh           # detach from your machine
+./uninstall.sh --brew    # also uninstall the Brewfile packages
+```
+
+`uninstall.sh` removes the managed block from `~/.zshrc` and the tmux config
+(preserving your own settings), drops the leftover symlinks and the neovim
+config symlinks, and deletes the generated plugin cache. Homebrew, the Brewfile packages,
+and NVM are shared tooling and are left in place unless you pass `--brew`.
 
 After install: open a new terminal, then run `nvim` once to let LazyVim
 bootstrap its plugins.
