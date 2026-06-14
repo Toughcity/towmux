@@ -98,11 +98,13 @@ echo "==> Linking neovim config"
 NVIM_SRC="$REPO/nvim/.config/nvim"
 NVIM_DST="$HOME/.config/nvim"
 mkdir -p "$NVIM_DST"
-# Drop our own symlinks whose source file was removed from the repo.
-find "$NVIM_DST" -type l 2>/dev/null | while IFS= read -r link; do
-  tgt="$(readlink "$link")"; [[ "$tgt" != /* ]] && tgt="$(dirname "$link")/$tgt"
-  [[ "$tgt" == "$NVIM_SRC"/* && ! -e "$link" ]] && rm -f "$link"
-done
+# Drop any dangling symlinks under ~/.config/nvim (e.g. links left behind when
+# repo files are removed, or when the repo itself is renamed/moved). Sweeping
+# all broken links — not just ones pointing into the current repo path — is what
+# makes a rename recoverable. The body always exits 0 so the loop never trips
+# `set -e`.
+find "$NVIM_DST" -type l ! -exec test -e {} \; -print0 2>/dev/null \
+  | while IFS= read -r -d '' link; do rm -f "$link"; done
 # Link every config file from the repo, recreating the directory structure.
 find "$NVIM_SRC" -type f -print0 | while IFS= read -r -d '' f; do
   rel="${f#"$NVIM_SRC"/}"
