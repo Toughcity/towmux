@@ -4,7 +4,7 @@
 # current "source from repo" approach or the older symlink approach.
 #
 # By default this only touches files install.sh manages:
-#   - removes the term-config block from ~/.zshrc and ~/.config/tmux/tmux.conf
+#   - removes the towmux block from ~/.zshrc and ~/.config/tmux/tmux.conf
 #     (or drops the whole file if it was a legacy symlink into this repo)
 #   - removes leftover symlinks for .p10k.zsh, .zsh_plugins.txt and the
 #     tp/trun/tterm/tnew/tlayout helpers
@@ -19,8 +19,12 @@ set -euo pipefail
 cd "$(dirname "$0")"
 REPO="$(pwd -P)"
 
-MARK_START="# >>> term-config >>>"
-MARK_END="# <<< term-config <<<"
+MARK_START="# >>> towmux >>>"
+MARK_END="# <<< towmux <<<"
+
+# Legacy markers from when this project was called "term-config" — detached too.
+LEGACY_START="# >>> term-config >>>"
+LEGACY_END="# <<< term-config <<<"
 
 UNINSTALL_BREW=0
 [[ "${1:-}" == "--brew" ]] && UNINSTALL_BREW=1
@@ -47,18 +51,20 @@ link_into_repo() {
 # blank lines. If nothing meaningful remains, delete the file.
 strip_block() {
   local file="$1" rest
-  rest="$(awk -v s="$MARK_START" -v e="$MARK_END" '
-    $0==s {skip=1} !skip {print} $0==e {skip=0}
+  rest="$(awk -v s="$MARK_START" -v e="$MARK_END" -v ls="$LEGACY_START" -v le="$LEGACY_END" '
+    $0==s || $0==ls {skip=1; next}
+    $0==e || $0==le {skip=0; next}
+    !skip {print}
   ' "$file" | awk '
     { l[NR]=$0; if ($0 ~ /[^[:space:]]/) { if (!f) f=NR; t=NR } }
     END { for (i=f; i<=t; i++) print l[i] }
   ')"
   if [[ -z "$rest" ]]; then
     rm -f "$file"
-    echo "   removed $file (no content left outside the term-config block)"
+    echo "   removed $file (no content left outside the towmux block)"
   else
     printf '%s\n' "$rest" >"$file"
-    echo "   removed term-config block from $file"
+    echo "   removed towmux block from $file"
   fi
 }
 
@@ -69,7 +75,7 @@ detach() {
   if link_into_repo "$file"; then
     rm -f "$file"
     echo "   removed legacy symlink $file"
-  elif [[ -f "$file" ]] && grep -qF "$MARK_START" "$file"; then
+  elif [[ -f "$file" ]] && { grep -qF "$MARK_START" "$file" || grep -qF "$LEGACY_START" "$file"; }; then
     strip_block "$file"
   fi
 }
@@ -126,7 +132,7 @@ fi
 
 cat <<EOF
 
-==> Done. term-config has been detached from your machine.
+==> Done. towmux has been detached from your machine.
 
 Left in place (shared tooling — remove manually if you really want to):
 EOF
@@ -137,5 +143,5 @@ cat <<EOF
   - Homebrew itself      https://github.com/homebrew/install#uninstall-homebrew
   - NVM                  rm -rf "\$HOME/.nvm"
 
-Open a new terminal to drop the term-config shell setup from your session.
+Open a new terminal to drop the towmux shell setup from your session.
 EOF

@@ -4,7 +4,7 @@
 #
 # This does NOT overwrite your shell or tmux config. Instead it appends a
 # small managed block to ~/.zshrc and ~/.config/tmux/tmux.conf that sources
-# the term-config files straight from this repo. Your own settings in those
+# the towmux files straight from this repo. Your own settings in those
 # files are left untouched. Remove the marked block to fully detach.
 
 set -euo pipefail
@@ -12,10 +12,15 @@ set -euo pipefail
 cd "$(dirname "$0")"
 REPO="$(pwd -P)"
 
-MARK_START="# >>> term-config >>>"
-MARK_END="# <<< term-config <<<"
+MARK_START="# >>> towmux >>>"
+MARK_END="# <<< towmux <<<"
 
-# Replace any existing term-config block in $1, then write $2 to it.
+# Legacy markers from when this project was called "term-config" — stripped on
+# install so renaming doesn't leave a stale duplicate block behind.
+LEGACY_START="# >>> term-config >>>"
+LEGACY_END="# <<< term-config <<<"
+
+# Replace any existing towmux block in $1, then write $2 to it.
 # $3 = "top" prepends (needed so p10k's instant prompt stays near the top of
 # ~/.zshrc); anything else appends.
 ensure_block() {
@@ -27,11 +32,14 @@ ensure_block() {
   [[ -L "$file" ]] && rm -f "$file"
   [[ -f "$file" ]] || : >"$file"
 
-  # Strip a previous managed block (markers inclusive) so re-runs update in
-  # place, then trim leading/trailing blank lines so blanks don't accumulate.
+  # Strip a previous managed block (current or legacy markers, inclusive) so
+  # re-runs update in place, then trim leading/trailing blank lines so blanks
+  # don't accumulate.
   local stripped
-  stripped="$(awk -v s="$MARK_START" -v e="$MARK_END" '
-    $0==s {skip=1} !skip {print} $0==e {skip=0}
+  stripped="$(awk -v s="$MARK_START" -v e="$MARK_END" -v ls="$LEGACY_START" -v le="$LEGACY_END" '
+    $0==s || $0==ls {skip=1; next}
+    $0==e || $0==le {skip=0; next}
+    !skip {print}
   ' "$file" | awk '
     { l[NR]=$0; if ($0 ~ /[^[:space:]]/) { if (!f) f=NR; t=NR } }
     END { for (i=f; i<=t; i++) print l[i] }
@@ -55,28 +63,28 @@ fi
 echo "==> Installing Brewfile packages"
 brew bundle --file=./Brewfile
 
-# 3. NVM (term-config.zsh lazy-loads it; install if missing)
+# 3. NVM (towmux.zsh lazy-loads it; install if missing)
 if [[ ! -d "$HOME/.nvm" ]]; then
   echo "==> Installing NVM"
   PROFILE=/dev/null curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
 fi
 
 # 4. Reference the zsh module from ~/.zshrc (prepended, never overwritten)
-echo "==> Wiring term-config into ~/.zshrc"
+echo "==> Wiring towmux into ~/.zshrc"
 ensure_block "$HOME/.zshrc" "$(cat <<EOF
 $MARK_START
-# Managed by term-config/install.sh — sources shared shell config from the repo.
+# Managed by towmux/install.sh — sources shared shell config from the repo.
 # Delete this block (both markers included) to detach. Your other settings stay.
-[[ -f "$REPO/zsh/term-config.zsh" ]] && source "$REPO/zsh/term-config.zsh"
+[[ -f "$REPO/zsh/towmux.zsh" ]] && source "$REPO/zsh/towmux.zsh"
 $MARK_END
 EOF
 )" top
 
 # 5. Reference the tmux config from ~/.config/tmux/tmux.conf (appended)
-echo "==> Wiring term-config into ~/.config/tmux/tmux.conf"
+echo "==> Wiring towmux into ~/.config/tmux/tmux.conf"
 ensure_block "$HOME/.config/tmux/tmux.conf" "$(cat <<EOF
 $MARK_START
-# Managed by term-config/install.sh — delete this block to detach.
+# Managed by towmux/install.sh — delete this block to detach.
 source-file "$REPO/tmux/.config/tmux/tmux.conf"
 $MARK_END
 EOF
@@ -107,7 +115,7 @@ cat <<EOF
 ==> Done.
 
 Next steps:
-  1. Open a new terminal so the term-config additions to ~/.zshrc load.
+  1. Open a new terminal so the towmux additions to ~/.zshrc load.
   2. Run \`nvim\` once — LazyVim will bootstrap lazy.nvim and install all plugins.
   3. Set your terminal font to "MesloLGS Nerd Font" so p10k glyphs render.
   4. Run \`tp .\` inside any project directory to open your first tmux project.
