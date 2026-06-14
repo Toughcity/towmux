@@ -211,3 +211,9 @@ when done.
 
 `nvim/.config/nvim/` is based on the [LazyVim starter](https://github.com/LazyVim/starter)
 ([Apache License 2.0](nvim/.config/nvim/LICENSE)), modified for this setup.
+
+## License
+
+[MIT](LICENSE) © Towfie Fanous, except `nvim/.config/nvim/`, which remains under
+the [Apache License 2.0](nvim/.config/nvim/LICENSE) inherited from the LazyVim
+starter (see [Credits](#credits)).
