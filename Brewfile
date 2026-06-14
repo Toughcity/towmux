@@ -22,7 +22,6 @@ brew "ripgrep"       # rg
 brew "fd"            # fd (replaces ~/.cargo/bin/fd)
 
 # editor
-brew "opencode"      # AI coding agent (agentic coding + inline assistance)
 brew "neovim"
 brew "node"          # mason / copilot / LSP servers under LazyVim
 brew "uv"            # python provider for nvim + ruff/mypy installs
