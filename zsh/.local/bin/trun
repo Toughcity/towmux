@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# trun — run named configurations in their own stable windows (JetBrains-style)
+# trun — run named configurations in their own stable windows (like popular IDEs)
 #
 #   trun                     fzf-pick a config from .trun, run it
 #   trun <name>              run named config from .trun

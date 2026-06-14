@@ -73,7 +73,7 @@ Helper commands inside a project session:
 
 | Command | Purpose |
 |---------|---------|
-| `trun [name]` | Run a named config from a project's `.trun` file in its own stable window (JetBrains-style run configs), or `trun -- <cmd>` for an ad-hoc command. |
+| `trun [name]` | Run a named config from a project's `.trun` file in its own stable window (run configs, like popular IDEs), or `trun -- <cmd>` for an ad-hoc command. |
 | `tterm` | Add another terminal window (`term`, `term-2`, …). |
 | `tlayout [ide\|windows]` | Convert the current session between layouts — running processes are preserved. |
 | `tnew [name]` | Start a plain scratch session, outside the project workflow. |
