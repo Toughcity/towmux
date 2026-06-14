@@ -21,6 +21,8 @@ fi
 export EDITOR=nvim
 export VISUAL=nvim
 export PATH="$TERM_CONFIG_DIR/.local/bin:$HOME/.local/bin:$PATH"
+# Optional per-machine overrides (secrets, CODE_DIRS/DEV_DIRS, etc.) — kept out
+# of the repo. install.sh leaves your ~/.zshrc alone, so this file is optional.
 [[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
 
 # ── 3. history ───────────────────────────────────────────────────────

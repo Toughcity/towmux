@@ -143,17 +143,20 @@ Two pickers scan your project directories — currently via **separate** env var
 | `tp` (tmux) | `CODE_DIRS` | space-separated | `~/Code ~/Code-Safad` |
 | nvim `<Space>fp` | `DEV_DIRS` | colon-separated (like `$PATH`) | `~/Code` |
 
-Set them in `~/.zshrc.local`:
+Set them in your `~/.zshrc` (install never overwrites it), or in `~/.zshrc.local`
+(see below):
 
 ```sh
 export CODE_DIRS="$HOME/Code $HOME/Work"
 export DEV_DIRS="$HOME/Code:$HOME/Work"
 ```
 
-### Local overrides
+### Local overrides (optional)
 
-Put machine-specific env vars in `~/.zshrc.local`; `~/.zshrc` sources it if it
-exists, so the settings stay local and out of the repo.
+install.sh never touches your `~/.zshrc`, so machine-specific env vars can simply
+go there. If you'd rather keep them in a separate file — handy for secrets or for
+settings you don't want in a tracked dotfiles repo — `term-config.zsh` sources
+`~/.zshrc.local` if it exists:
 
 ```sh
 echo 'export MY_VAR=value' >> ~/.zshrc.local
