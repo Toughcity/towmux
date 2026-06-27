@@ -143,7 +143,7 @@ GIVEN the IDE layout is active and `pane-border-status top` is set per-window (b
 THEN each pane shows a centered label at its top border
 AND the label reads the `@layout-name` option of the pane (e.g. `code`, `ai`, `term`)
 AND the active pane's label background is orange (`#ff9e64`); inactive panes use grey (`#414868`)
-AND the label has a Powerline taper on both sides (left `` and right `` triangles)
+AND the label has a Powerline taper on both sides (left and right triangles)
 AND pane borders are a single uniform blue (`#7aa2f7`) color (active and inactive borders match)
 
 ## S-TMUX-16: terminal tab title
