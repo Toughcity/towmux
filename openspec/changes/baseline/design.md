@@ -90,6 +90,9 @@ so `tp .` in the same repo always attaches to the same session.
 NVM is installed separately (not via Homebrew) to avoid version-pinning issues.
 
 ## Neovim plugins (beyond LazyVim defaults)
+
+Note: This baseline lists the Neovim plugins in use, but does not attempt to fully specify Neovim/LazyVim behaviour (keymaps, UI, plugin semantics, etc.).
+
 | Plugin | Purpose |
 |--------|---------|
 | smart-splits.nvim | seamless Ctrl-hjkl across nvim splits and tmux panes |
