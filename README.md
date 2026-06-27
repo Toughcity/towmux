@@ -186,6 +186,19 @@ today. `:Lazy sync` is how you pull upstream drift on your schedule.
 Add a line to `Brewfile` and re-run `./install.sh`. Keep project-specific tooling
 (databases, cloud SDKs, language SDKs) out of here — install those per project.
 
+## Spec-driven development
+
+towmux is documented as behavioural specs under [`openspec/`](openspec/), managed
+with [OpenSpec](https://github.com/Fission-AI/openspec). The `changes/baseline/`
+directory is an as-built snapshot of the project; new work lands as change
+proposals alongside it.
+
+The `/opsx:*` Claude Code commands (`/opsx:explore`, `/opsx:propose`,
+`/opsx:apply`, `/opsx:archive`) are committed under `.claude/` so they're
+available the moment you clone the repo — no setup needed. To regenerate or
+update them after an OpenSpec release, run `openspec update`
+(`npm install -g @fission-ai/openspec` first).
+
 ## Credits
 
 `nvim/.config/nvim/` is based on the [LazyVim starter](https://github.com/LazyVim/starter)
