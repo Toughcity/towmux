@@ -1,0 +1,19 @@
+project: towmux
+description: >
+  A terminal-native project workspace manager for AI-assisted development.
+  Wraps tmux + Neovim + Claude Code into a single-session-per-project model
+  that runs from a cloned repo with no extra tooling.
+tool: claude-code
+source_of_truth: openspec/changes/baseline/design.md
+tech_stack:
+  - bash
+  - zsh
+  - tmux
+  - neovim (LazyVim)
+  - fzf
+  - homebrew
+conventions:
+  - All shell scripts use `set -euo pipefail`
+  - Install is idempotent — managed blocks are replaced in place, not appended
+  - Repo files are sourced/referenced directly (no copy-on-install)
+  - Neovim config is the one exception — symlinked per-file into ~/.config/nvim
