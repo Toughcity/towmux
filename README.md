@@ -73,17 +73,28 @@ Helper commands inside a project session:
 
 | Command | Purpose |
 |---------|---------|
-| `trun [name]` | Run a named config from a project's `.trun` file in its own stable window (run configs, like popular IDEs), or `trun -- <cmd>` for an ad-hoc command. |
 | `tterm` | Add another terminal window (`term`, `term-2`, …). |
 | `tlayout [ide\|windows]` | Convert the current session between layouts — running processes are preserved. |
 | `tnew [name]` | Start a plain scratch session, outside the project workflow. |
 
-A project `.trun` file (one config per line) defines run tasks:
+Running and debugging now live in neovim. Press `<Space>r?` for a single
+run/debug picker over a project's `.vscode/tasks.json` (overseer) and
+`.vscode/launch.json` (nvim-dap). Run entries start or restart; debug entries
+launch with editor breakpoints. If a project has no tasks, the picker hands a
+natural-language request to the `ai` window so Claude authors the config — see
+[`.claude/skills/task-runner-skill`](.claude/skills/task-runner-skill/SKILL.md).
 
-```
-frontend: npm run dev
-backend:  go run ./cmd/server
-test:     go test ./...
+Migrating from the old `.trun` format? Re-express each entry as a
+`.vscode/tasks.json` task:
+
+```jsonc
+// .trun:  frontend: npm run dev   →   .vscode/tasks.json
+{
+  "version": "2.0.0",
+  "tasks": [
+    { "label": "frontend", "type": "shell", "command": "npm run dev" }
+  ]
+}
 ```
 
 ## Features
@@ -96,11 +107,13 @@ test:     go test ./...
 **tmux**
 - `C-Space` prefix, mouse on, vi copy mode, status bar on top with a Tokyo Night Powerline theme
 - Seamless `Ctrl-hjkl` navigation between Neovim splits and tmux panes ([smart-splits.nvim](https://github.com/mrjones2014/smart-splits.nvim))
-- The `tp`/`trun`/`tterm`/`tlayout`/`tnew` workspace tooling above
+- The `tp`/`tterm`/`tlayout`/`tnew` workspace tooling above
 
 **Neovim ([LazyVim](https://github.com/LazyVim/LazyVim))**
 - Full IDE feature set: LSP, completion, treesitter, git signs, lint, fuzzy finding
-- Project picker (`<Space>fp`), Trouble diagnostics, Overseer task runner
+- Project picker (`<Space>fp`), Trouble diagnostics
+- Unified run/debug picker (`<Space>r?`) over `.vscode/tasks.json` + `launch.json`, with AI-assisted task creation
+- nvim-dap debugging with breakpoints; adapters auto-installed via Mason
 - See [`nvim/.config/nvim/CHEATSHEET.md`](nvim/.config/nvim/CHEATSHEET.md) for the full keymap
 
 ## Bootstrap a new mac

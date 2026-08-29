@@ -164,8 +164,8 @@ _cfgsync() {
 #
 # ── tmux mental model ────────────────────────────────────────────────
 #   Session  = one project  (e.g. "my-api", "frontend")
-#   Window   = a purpose panel inside a project (code / run / ai / term)
-#              → switch windows to move between nvim, run, ai, terminal
+#   Window   = a purpose panel inside a project (code / ai / term)
+#              → switch windows to move between nvim, ai, terminal
 #   Pane     = a split inside a window (rarely needed)
 #              → switch panes only if you manually split a window
 #
@@ -192,7 +192,6 @@ _cfgsync() {
 # ── tmux: switching windows (your main day-to-day navigation) ────────
 #   prefix + 1/2/3/4         jump to window by number
 #   prefix + e               jump to 'code'  window  (your editor)
-#   prefix + u               jump to 'run'   window
 #   prefix + i               jump to 'ai'    window
 #   prefix + o               jump to 'term'  window
 #   prefix + n / p           next / previous window
@@ -218,15 +217,15 @@ _cfgsync() {
 #                              v=select  y=copy to clipboard  Esc=exit
 #   prefix + r               reload tmux config
 #
-# ── trun — named run configs (.trun file in project root) ────────────
-#   trun                     fzf-pick a config and run it
-#   trun <name>              run named config  (e.g. trun frontend)
-#   trun <name> -- <cmd>     run explicit cmd in run-<name> window
-#   trun -- <cmd>            run explicit cmd in default 'run' window
-#
-#   .trun format:            frontend: npm run dev
-#                            backend:  go run ./cmd/server
-#                            debug:    node --inspect src/index.js
+# ── running & debugging tasks ────────────────────────────────────────
+#   Tasks now live in neovim. From the editor:
+#     <leader>r?    open the run/debug picker (overseer tasks + dap configs)
+#                     run entries start, or restart if already running
+#                     debug entries launch nvim-dap with editor breakpoints
+#                   no tasks yet? the picker hands a request to the 'ai'
+#                   window so Claude authors .vscode/tasks.json|launch.json
+#     <leader>rt    toggle the task output panel
+#     <leader>rl    re-run the last task
 #
 # CHEATSHEET END
 

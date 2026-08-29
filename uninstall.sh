@@ -7,7 +7,7 @@
 #   - removes the towmux block from ~/.zshrc and ~/.config/tmux/tmux.conf
 #     (or drops the whole file if it was a legacy symlink into this repo)
 #   - removes leftover symlinks for .p10k.zsh, .zsh_plugins.txt and the
-#     tp/trun/tterm/tnew/tlayout helpers
+#     tp/tterm/tnew/tlayout helpers
 #   - removes the neovim config symlinks from ~/.config/nvim
 #   - deletes antidote's generated plugin cache inside the repo
 #
@@ -86,9 +86,9 @@ detach "$HOME/.config/tmux/tmux.conf"
 
 echo "==> Removing leftover symlinks"
 for f in "$HOME/.p10k.zsh" "$HOME/.zsh_plugins.txt" \
-         "$HOME/.local/bin/tp"   "$HOME/.local/bin/trun"  \
-         "$HOME/.local/bin/tterm" "$HOME/.local/bin/tnew" \
-         "$HOME/.local/bin/tlayout"; do
+         "$HOME/.local/bin/tp"    "$HOME/.local/bin/tterm" \
+         "$HOME/.local/bin/tnew"  "$HOME/.local/bin/tlayout" \
+         "$HOME/.local/bin/trun"; do  # trun retired; clean up legacy installs
   if link_into_repo "$f"; then
     rm -f "$f"
     echo "   removed $f"
