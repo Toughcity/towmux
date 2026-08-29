@@ -55,10 +55,20 @@
 - `:terminal` — open terminal inside current split
 - `Ctrl+\ Ctrl+n` — exit terminal mode (go back to normal mode)
 
-## Tasks (overseer.nvim)
-- `<Space>rr` — pick and run a task (Build, Run Game, Run Tests, Build + Run)
+## Run & Debug Tasks
+- `<Space>r?` — **run/debug picker**: one list of `[run]` tasks (overseer /
+  `.vscode/tasks.json`) and `[debug]` configs (nvim-dap / `.vscode/launch.json`).
+  A `[run]` entry starts, or restarts (●) if already running. A `[debug]` entry
+  launches nvim-dap so your editor breakpoints are hit.
+  No tasks yet? Pick "Create a task with AI…" and describe what you want — the
+  request is sent to the `ai` window so Claude writes the config file for you.
+- `<Space>rr` — overseer's own task picker
 - `<Space>rt` — toggle task output panel
 - `<Space>rl` — re-run the last task
+
+Debugging needs the adapter for your stack installed via Mason (`netcoredbg`,
+`delve`, `debugpy`, `codelldb`, `js`). AI task creation expects the `ai` window
+to be running Claude.
 
 ## Understanding Shortcuts
 - `<leader>` = `Space`
