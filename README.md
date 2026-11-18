@@ -9,6 +9,8 @@
 
 # towmux
 
+> **Vibe code alert:** this project was built largely with an AI coding assistant. Review it before relying on it.
+
 **An efficient, low-overhead development environment for the age of AI agents.**
 
 towmux turns your terminal into a project workspace manager. Instead of
